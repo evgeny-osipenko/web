@@ -19,22 +19,22 @@
 </span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.State.Class</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">State</span></span><span>
 </span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Writer.Class</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Writer</span></span><span>
 </span><span id="line-21"></span><span>
-</span><span id="line-22"></span><span id="local-6989586621679071336"><span class="hs-keyword">instance</span><span>
+</span><span id="line-22"></span><span id="local-6989586621679069865"><span class="hs-keyword">instance</span><span>
 </span><span id="line-23"></span><span>    </span><span class="hs-pragma">{-# OVERLAPPABLE</span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-24"></span><span>    </span><span id="local-6989586621679071329"><span id="local-6989586621679071331"><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071336"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Applicative</span></span><span> </span><span class="annot"><a href="#local-6989586621679071336"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Alternative</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071336"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-25"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Alternative</span></span><span> </span><span class="annot"><a href="#local-6989586621679071336"><span class="hs-identifier hs-type">m</span></a></span></span></span><span>
+</span><span id="line-24"></span><span>    </span><span id="local-6989586621679069858"><span id="local-6989586621679069860"><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069865"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Applicative</span></span><span> </span><span class="annot"><a href="#local-6989586621679069865"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Alternative</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069865"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Alternative</span></span><span> </span><span class="annot"><a href="#local-6989586621679069865"><span class="hs-identifier hs-type">m</span></a></span></span></span><span>
 </span><span id="line-26"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-27"></span><span>    </span><span id="local-6989586621679071327"><span class="annot"><span class="annottext">empty :: m a
+</span><span id="line-27"></span><span>    </span><span id="local-6989586621679069856"><span class="annot"><span class="annottext">empty :: m a
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var">empty</span></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-28"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">Reduced m a
 forall (f :: * -&gt; *) a. Alternative f =&gt; f a
 </span><span class="hs-identifier hs-var">empty</span></span><span>
-</span><span id="line-29"></span><span>    </span><span id="local-6989586621679071324"><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071324"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679071323"><span class="annot"><span class="annottext">&lt;|&gt; :: m a -&gt; m a -&gt; m a
-</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;|&gt;</span></span></span><span> </span><span id="local-6989586621679071321"><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071321"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-29"></span><span>    </span><span id="local-6989586621679069853"><span class="annot"><span class="annottext">m a
+</span><a href="#local-6989586621679069853"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679069852"><span class="annot"><span class="annottext">&lt;|&gt; :: m a -&gt; m a -&gt; m a
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;|&gt;</span></span></span><span> </span><span id="local-6989586621679069850"><span class="annot"><span class="annottext">m a
+</span><a href="#local-6989586621679069850"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-30"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
@@ -42,29 +42,29 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071324"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Reduced m a -&gt; Reduced m a -&gt; Reduced m a
+</span><a href="#local-6989586621679069853"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Reduced m a -&gt; Reduced m a -&gt; Reduced m a
 forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
 </span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span> </span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071321"><span class="hs-identifier hs-var">b</span></a></span></span><span>
+</span><a href="#local-6989586621679069850"><span class="hs-identifier hs-var">b</span></a></span></span><span>
 </span><span id="line-31"></span><span>
-</span><span id="line-32"></span><span id="local-6989586621679071319"><span class="hs-keyword">instance</span><span>
+</span><span id="line-32"></span><span id="local-6989586621679069848"><span class="hs-keyword">instance</span><span>
 </span><span id="line-33"></span><span>    </span><span class="hs-pragma">{-# OVERLAPPABLE</span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-34"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071319"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679071319"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071319"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-35"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="annot"><a href="#local-6989586621679071319"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069848"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679069848"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069848"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="annot"><a href="#local-6989586621679069848"><span class="hs-identifier hs-type">m</span></a></span><span>
 </span><span id="line-36"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-37"></span><span>    </span><span id="local-6989586621679071313"><span class="annot"><span class="annottext">mzero :: m a
+</span><span id="line-37"></span><span>    </span><span id="local-6989586621679069842"><span class="annot"><span class="annottext">mzero :: m a
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var">mzero</span></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-38"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">Reduced m a
 forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a
 </span><span class="hs-identifier hs-var">mzero</span></span><span>
-</span><span id="line-39"></span><span>    </span><span id="local-6989586621679071311"><span class="annot"><span class="annottext">mplus :: m a -&gt; m a -&gt; m a
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">mplus</span></span></span><span> </span><span id="local-6989586621679071309"><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071309"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679071308"><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071308"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-39"></span><span>    </span><span id="local-6989586621679069840"><span class="annot"><span class="annottext">mplus :: m a -&gt; m a -&gt; m a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">mplus</span></span></span><span> </span><span id="local-6989586621679069838"><span class="annot"><span class="annottext">m a
+</span><a href="#local-6989586621679069838"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679069837"><span class="annot"><span class="annottext">m a
+</span><a href="#local-6989586621679069837"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-40"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
@@ -74,19 +74,19 @@ forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a -&gt; m a -&gt; m a
 </span><span class="hs-identifier hs-var">mplus</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071309"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
+</span><a href="#local-6989586621679069838"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071308"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span></span><span>
+</span><a href="#local-6989586621679069837"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-41"></span><span>
-</span><span id="line-42"></span><span id="local-6989586621679071307"><span class="hs-keyword">instance</span><span>
+</span><span id="line-42"></span><span id="local-6989586621679069836"><span class="hs-keyword">instance</span><span>
 </span><span id="line-43"></span><span>    </span><span class="hs-pragma">{-# OVERLAPPABLE</span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-44"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071307"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679071307"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadFail</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071307"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-45"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">MonadFail</span></span><span> </span><span class="annot"><a href="#local-6989586621679071307"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-44"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069836"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679069836"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadFail</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069836"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">MonadFail</span></span><span> </span><span class="annot"><a href="#local-6989586621679069836"><span class="hs-identifier hs-type">m</span></a></span><span>
 </span><span id="line-46"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-47"></span><span>    </span><span id="local-6989586621679071303"><span class="annot"><span class="annottext">fail :: String -&gt; m a
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">fail</span></span></span><span> </span><span id="local-6989586621679071302"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679071302"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-47"></span><span>    </span><span id="local-6989586621679069832"><span class="annot"><span class="annottext">fail :: String -&gt; m a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">fail</span></span></span><span> </span><span id="local-6989586621679069831"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679069831"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-48"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
@@ -94,16 +94,16 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Reduced m a
 forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
 </span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679071302"><span class="hs-identifier hs-var">msg</span></a></span></span><span>
+</span><a href="#local-6989586621679069831"><span class="hs-identifier hs-var">msg</span></a></span></span><span>
 </span><span id="line-49"></span><span>
-</span><span id="line-50"></span><span id="local-6989586621679071301"><span class="hs-keyword">instance</span><span>
+</span><span id="line-50"></span><span id="local-6989586621679069830"><span class="hs-keyword">instance</span><span>
 </span><span id="line-51"></span><span>    </span><span class="hs-pragma">{-# OVERLAPPABLE</span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-52"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071301"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679071301"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadFix</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071301"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-53"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">MonadFix</span></span><span> </span><span class="annot"><a href="#local-6989586621679071301"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-52"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069830"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679069830"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadFix</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069830"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-53"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">MonadFix</span></span><span> </span><span class="annot"><a href="#local-6989586621679069830"><span class="hs-identifier hs-type">m</span></a></span><span>
 </span><span id="line-54"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-55"></span><span>    </span><span id="local-6989586621679071297"><span class="annot"><span class="annottext">mfix :: (a -&gt; m a) -&gt; m a
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">mfix</span></span></span><span> </span><span id="local-6989586621679071296"><span class="annot"><span class="annottext">a -&gt; m a
-</span><a href="#local-6989586621679071296"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-55"></span><span>    </span><span id="local-6989586621679069826"><span class="annot"><span class="annottext">mfix :: (a -&gt; m a) -&gt; m a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">mfix</span></span></span><span> </span><span id="local-6989586621679069825"><span class="annot"><span class="annottext">a -&gt; m a
+</span><a href="#local-6989586621679069825"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-56"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
@@ -115,16 +115,16 @@ forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(m a -&gt; Reduced m a) -&gt; (a -&gt; m a) -&gt; a -&gt; Reduced m a
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; m a
-</span><a href="#local-6989586621679071296"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span></span><span>
+</span><a href="#local-6989586621679069825"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-57"></span><span>
-</span><span id="line-58"></span><span id="local-6989586621679071294"><span class="hs-keyword">instance</span><span>
+</span><span id="line-58"></span><span id="local-6989586621679069823"><span class="hs-keyword">instance</span><span>
 </span><span id="line-59"></span><span>    </span><span class="hs-pragma">{-# OVERLAPPABLE</span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-60"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071294"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679071294"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadThrow</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071294"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-61"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadThrow</span></span><span> </span><span class="annot"><a href="#local-6989586621679071294"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-60"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069823"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679069823"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadThrow</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069823"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadThrow</span></span><span> </span><span class="annot"><a href="#local-6989586621679069823"><span class="hs-identifier hs-type">m</span></a></span><span>
 </span><span id="line-62"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-63"></span><span>    </span><span id="local-6989586621679071290"><span class="annot"><span class="annottext">throwM :: e -&gt; m a
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">throwM</span></span></span><span> </span><span id="local-6989586621679071288"><span class="annot"><span class="annottext">e
-</span><a href="#local-6989586621679071288"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-63"></span><span>    </span><span id="local-6989586621679069819"><span class="annot"><span class="annottext">throwM :: e -&gt; m a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">throwM</span></span></span><span> </span><span id="local-6989586621679069817"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679069817"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-64"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
@@ -132,17 +132,17 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">e -&gt; Reduced m a
 forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">Catch.throwM</span></span><span> </span><span class="annot"><span class="annottext">e
-</span><a href="#local-6989586621679071288"><span class="hs-identifier hs-var">e</span></a></span></span><span>
+</span><a href="#local-6989586621679069817"><span class="hs-identifier hs-var">e</span></a></span></span><span>
 </span><span id="line-65"></span><span>
-</span><span id="line-66"></span><span id="local-6989586621679071287"><span class="hs-keyword">instance</span><span>
+</span><span id="line-66"></span><span id="local-6989586621679069816"><span class="hs-keyword">instance</span><span>
 </span><span id="line-67"></span><span>    </span><span class="hs-pragma">{-# OVERLAPPABLE</span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-68"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071287"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679071287"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadCatch</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071287"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-69"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadCatch</span></span><span> </span><span class="annot"><a href="#local-6989586621679071287"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-68"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069816"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679069816"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadCatch</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069816"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-69"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadCatch</span></span><span> </span><span class="annot"><a href="#local-6989586621679069816"><span class="hs-identifier hs-type">m</span></a></span><span>
 </span><span id="line-70"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-71"></span><span>    </span><span id="local-6989586621679071283"><span class="annot"><span class="annottext">catch :: m a -&gt; (e -&gt; m a) -&gt; m a
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">catch</span></span></span><span> </span><span id="local-6989586621679071281"><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071281"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679071280"><span class="annot"><span class="annottext">e -&gt; m a
-</span><a href="#local-6989586621679071280"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-71"></span><span>    </span><span id="local-6989586621679069812"><span class="annot"><span class="annottext">catch :: m a -&gt; (e -&gt; m a) -&gt; m a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">catch</span></span></span><span> </span><span id="local-6989586621679069810"><span class="annot"><span class="annottext">m a
+</span><a href="#local-6989586621679069810"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679069809"><span class="annot"><span class="annottext">e -&gt; m a
+</span><a href="#local-6989586621679069809"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-72"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
@@ -154,21 +154,21 @@ m a -&gt; (e -&gt; m a) -&gt; m a
 </span><span class="hs-identifier hs-var">Catch.catch</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071281"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
+</span><a href="#local-6989586621679069810"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(m a -&gt; Reduced m a) -&gt; (e -&gt; m a) -&gt; e -&gt; Reduced m a
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">e -&gt; m a
-</span><a href="#local-6989586621679071280"><span class="hs-identifier hs-var">h</span></a></span><span class="hs-special">)</span></span><span>
+</span><a href="#local-6989586621679069809"><span class="hs-identifier hs-var">h</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-73"></span><span>
-</span><span id="line-74"></span><span id="local-6989586621679071279"><span class="hs-keyword">instance</span><span>
+</span><span id="line-74"></span><span id="local-6989586621679069808"><span class="hs-keyword">instance</span><span>
 </span><span id="line-75"></span><span>    </span><span class="hs-pragma">{-# OVERLAPPABLE</span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-76"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071279"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679071279"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadMask</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071279"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-77"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadMask</span></span><span> </span><span class="annot"><a href="#local-6989586621679071279"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-76"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069808"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679069808"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadMask</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069808"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-77"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadMask</span></span><span> </span><span class="annot"><a href="#local-6989586621679069808"><span class="hs-identifier hs-type">m</span></a></span><span>
 </span><span id="line-78"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-79"></span><span>    </span><span id="local-6989586621679071273"><span class="annot"><span class="annottext">mask :: ((forall a. m a -&gt; m a) -&gt; m b) -&gt; m b
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">mask</span></span></span><span> </span><span id="local-6989586621679071271"><span class="annot"><span class="annottext">(forall a. m a -&gt; m a) -&gt; m b
-</span><a href="#local-6989586621679071271"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-79"></span><span>    </span><span id="local-6989586621679069802"><span class="annot"><span class="annottext">mask :: ((forall a. m a -&gt; m a) -&gt; m b) -&gt; m b
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">mask</span></span></span><span> </span><span id="local-6989586621679069800"><span class="annot"><span class="annottext">(forall a. m a -&gt; m a) -&gt; m b
+</span><a href="#local-6989586621679069800"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-80"></span><span>        </span><span class="annot"><span class="annottext">Reduced m b -&gt; m b
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m b -&gt; m b) -&gt; Reduced m b -&gt; m b
@@ -183,29 +183,29 @@ MonadMask m =&gt;
 -&gt; ((forall a. Reduced m a -&gt; Reduced m a) -&gt; Reduced m b)
 -&gt; Reduced m b
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679071270"><span class="annot"><span class="annottext">forall a. Reduced m a -&gt; Reduced m a
-</span><a href="#local-6989586621679071270"><span class="hs-identifier hs-var">restoreReduced</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679069799"><span class="annot"><span class="annottext">forall a. Reduced m a -&gt; Reduced m a
+</span><a href="#local-6989586621679069799"><span class="hs-identifier hs-var">restoreReduced</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-81"></span><span>            </span><span class="annot"><span class="annottext">m b -&gt; Reduced m b
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(m b -&gt; Reduced m b) -&gt; m b -&gt; Reduced m b
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
 </span><span id="line-82"></span><span>                </span><span class="annot"><span class="annottext">(forall a. m a -&gt; m a) -&gt; m b
-</span><a href="#local-6989586621679071271"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
+</span><a href="#local-6989586621679069800"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; (m a -&gt; Reduced m a) -&gt; m a -&gt; m a
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Reduced m a -&gt; Reduced m a
 forall a. Reduced m a -&gt; Reduced m a
-</span><a href="#local-6989586621679071270"><span class="hs-identifier hs-var">restoreReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; Reduced m a)
+</span><a href="#local-6989586621679069799"><span class="hs-identifier hs-var">restoreReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; Reduced m a)
 -&gt; (m a -&gt; Reduced m a) -&gt; m a -&gt; Reduced m a
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-83"></span><span>    </span><span id="local-6989586621679071269"><span class="annot"><span class="annottext">uninterruptibleMask :: ((forall a. m a -&gt; m a) -&gt; m b) -&gt; m b
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">uninterruptibleMask</span></span></span><span> </span><span id="local-6989586621679071267"><span class="annot"><span class="annottext">(forall a. m a -&gt; m a) -&gt; m b
-</span><a href="#local-6989586621679071267"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-83"></span><span>    </span><span id="local-6989586621679069798"><span class="annot"><span class="annottext">uninterruptibleMask :: ((forall a. m a -&gt; m a) -&gt; m b) -&gt; m b
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">uninterruptibleMask</span></span></span><span> </span><span id="local-6989586621679069796"><span class="annot"><span class="annottext">(forall a. m a -&gt; m a) -&gt; m b
+</span><a href="#local-6989586621679069796"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-84"></span><span>        </span><span class="annot"><span class="annottext">Reduced m b -&gt; m b
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m b -&gt; m b) -&gt; Reduced m b -&gt; m b
@@ -220,31 +220,31 @@ MonadMask m =&gt;
 -&gt; ((forall a. Reduced m a -&gt; Reduced m a) -&gt; Reduced m b)
 -&gt; Reduced m b
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679071266"><span class="annot"><span class="annottext">forall a. Reduced m a -&gt; Reduced m a
-</span><a href="#local-6989586621679071266"><span class="hs-identifier hs-var">restoreReduced</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679069795"><span class="annot"><span class="annottext">forall a. Reduced m a -&gt; Reduced m a
+</span><a href="#local-6989586621679069795"><span class="hs-identifier hs-var">restoreReduced</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-85"></span><span>            </span><span class="annot"><span class="annottext">m b -&gt; Reduced m b
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(m b -&gt; Reduced m b) -&gt; m b -&gt; Reduced m b
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span>
 </span><span id="line-86"></span><span>                </span><span class="annot"><span class="annottext">(forall a. m a -&gt; m a) -&gt; m b
-</span><a href="#local-6989586621679071267"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
+</span><a href="#local-6989586621679069796"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; (m a -&gt; Reduced m a) -&gt; m a -&gt; m a
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Reduced m a -&gt; Reduced m a
 forall a. Reduced m a -&gt; Reduced m a
-</span><a href="#local-6989586621679071266"><span class="hs-identifier hs-var">restoreReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; Reduced m a)
+</span><a href="#local-6989586621679069795"><span class="hs-identifier hs-var">restoreReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; Reduced m a)
 -&gt; (m a -&gt; Reduced m a) -&gt; m a -&gt; Reduced m a
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-87"></span><span>    </span><span id="local-6989586621679071265"><span class="annot"><span class="annottext">generalBracket :: m a -&gt; (a -&gt; ExitCase b -&gt; m c) -&gt; (a -&gt; m b) -&gt; m (b, c)
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">generalBracket</span></span></span><span> </span><span id="local-6989586621679071263"><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071263"><span class="hs-identifier hs-var">aa</span></a></span></span><span> </span><span id="local-6989586621679071262"><span class="annot"><span class="annottext">a -&gt; ExitCase b -&gt; m c
-</span><a href="#local-6989586621679071262"><span class="hs-identifier hs-var">ar</span></a></span></span><span> </span><span id="local-6989586621679071261"><span class="annot"><span class="annottext">a -&gt; m b
-</span><a href="#local-6989586621679071261"><span class="hs-identifier hs-var">au</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-87"></span><span>    </span><span id="local-6989586621679069794"><span class="annot"><span class="annottext">generalBracket :: m a -&gt; (a -&gt; ExitCase b -&gt; m c) -&gt; (a -&gt; m b) -&gt; m (b, c)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">generalBracket</span></span></span><span> </span><span id="local-6989586621679069792"><span class="annot"><span class="annottext">m a
+</span><a href="#local-6989586621679069792"><span class="hs-identifier hs-var">aa</span></a></span></span><span> </span><span id="local-6989586621679069791"><span class="annot"><span class="annottext">a -&gt; ExitCase b -&gt; m c
+</span><a href="#local-6989586621679069791"><span class="hs-identifier hs-var">ar</span></a></span></span><span> </span><span id="local-6989586621679069790"><span class="annot"><span class="annottext">a -&gt; m b
+</span><a href="#local-6989586621679069790"><span class="hs-identifier hs-var">au</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-88"></span><span>        </span><span class="annot"><span class="annottext">Reduced m (b, c) -&gt; m (b, c)
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m (b, c) -&gt; m (b, c)) -&gt; Reduced m (b, c) -&gt; m (b, c)
@@ -260,30 +260,30 @@ m a -&gt; (a -&gt; ExitCase b -&gt; m c) -&gt; (a -&gt; m b) -&gt; m (b, c)
 </span><span id="line-89"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071263"><span class="hs-identifier hs-var">aa</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-90"></span><span>            </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679071260"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679071260"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span id="local-6989586621679071259"><span class="annot"><span class="annottext">ExitCase b
-</span><a href="#local-6989586621679071259"><span class="hs-identifier hs-var">ec</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">m c -&gt; Reduced m c
+</span><a href="#local-6989586621679069792"><span class="hs-identifier hs-var">aa</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-90"></span><span>            </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679069789"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679069789"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span id="local-6989586621679069788"><span class="annot"><span class="annottext">ExitCase b
+</span><a href="#local-6989586621679069788"><span class="hs-identifier hs-var">ec</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">m c -&gt; Reduced m c
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; ExitCase b -&gt; m c
-</span><a href="#local-6989586621679071262"><span class="hs-identifier hs-var">ar</span></a></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679071260"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">ExitCase b
-</span><a href="#local-6989586621679071259"><span class="hs-identifier hs-var">ec</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-91"></span><span>            </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679071258"><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679071258"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">m b -&gt; Reduced m b
+</span><a href="#local-6989586621679069791"><span class="hs-identifier hs-var">ar</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679069789"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">ExitCase b
+</span><a href="#local-6989586621679069788"><span class="hs-identifier hs-var">ec</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-91"></span><span>            </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679069787"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679069787"><span class="hs-identifier hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">m b -&gt; Reduced m b
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; m b
-</span><a href="#local-6989586621679071261"><span class="hs-identifier hs-var">au</span></a></span><span> </span><span class="annot"><span class="annottext">a
-</span><a href="#local-6989586621679071258"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><a href="#local-6989586621679069790"><span class="hs-identifier hs-var">au</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679069787"><span class="hs-identifier hs-var">r</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
 </span><span id="line-92"></span><span>
-</span><span id="line-93"></span><span id="local-6989586621679071256"><span id="local-6989586621679071257"><span class="hs-keyword">instance</span><span>
+</span><span id="line-93"></span><span id="local-6989586621679069785"><span id="local-6989586621679069786"><span class="hs-keyword">instance</span><span>
 </span><span id="line-94"></span><span>    </span><span class="hs-pragma">{-# OVERLAPPABLE</span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-95"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071257"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679071257"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Except.MonadError</span></span><span> </span><span class="annot"><a href="#local-6989586621679071256"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071257"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-96"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Except.MonadError</span></span><span> </span><span class="annot"><a href="#local-6989586621679071256"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071257"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-95"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069786"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679069786"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Except.MonadError</span></span><span> </span><span class="annot"><a href="#local-6989586621679069785"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069786"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-96"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Except.MonadError</span></span><span> </span><span class="annot"><a href="#local-6989586621679069785"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069786"><span class="hs-identifier hs-type">m</span></a></span><span>
 </span><span id="line-97"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-98"></span><span>    </span><span id="local-6989586621679071251"><span class="annot"><span class="annottext">throwError :: e -&gt; m a
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">throwError</span></span></span><span> </span><span id="local-6989586621679071249"><span class="annot"><span class="annottext">e
-</span><a href="#local-6989586621679071249"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-98"></span><span>    </span><span id="local-6989586621679069780"><span class="annot"><span class="annottext">throwError :: e -&gt; m a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">throwError</span></span></span><span> </span><span id="local-6989586621679069778"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679069778"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-99"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
@@ -291,11 +291,11 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">e -&gt; Reduced m a
 forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
 </span><span class="hs-identifier hs-var">Except.throwError</span></span><span> </span><span class="annot"><span class="annottext">e
-</span><a href="#local-6989586621679071249"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-100"></span><span>    </span><span id="local-6989586621679071248"><span class="annot"><span class="annottext">catchError :: m a -&gt; (e -&gt; m a) -&gt; m a
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">catchError</span></span></span><span> </span><span id="local-6989586621679071246"><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071246"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679071245"><span class="annot"><span class="annottext">e -&gt; m a
-</span><a href="#local-6989586621679071245"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679069778"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-100"></span><span>    </span><span id="local-6989586621679069777"><span class="annot"><span class="annottext">catchError :: m a -&gt; (e -&gt; m a) -&gt; m a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">catchError</span></span></span><span> </span><span id="local-6989586621679069775"><span class="annot"><span class="annottext">m a
+</span><a href="#local-6989586621679069775"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679069774"><span class="annot"><span class="annottext">e -&gt; m a
+</span><a href="#local-6989586621679069774"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-101"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
@@ -307,29 +307,29 @@ m a -&gt; (e -&gt; m a) -&gt; m a
 </span><span class="hs-identifier hs-var">Except.catchError</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071246"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
+</span><a href="#local-6989586621679069775"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(m a -&gt; Reduced m a) -&gt; (e -&gt; m a) -&gt; e -&gt; Reduced m a
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">e -&gt; m a
-</span><a href="#local-6989586621679071245"><span class="hs-identifier hs-var">h</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><a href="#local-6989586621679069774"><span class="hs-identifier hs-var">h</span></a></span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-102"></span><span>
-</span><span id="line-103"></span><span id="local-6989586621679071243"><span id="local-6989586621679071244"><span class="hs-keyword">instance</span><span>
+</span><span id="line-103"></span><span id="local-6989586621679069772"><span id="local-6989586621679069773"><span class="hs-keyword">instance</span><span>
 </span><span id="line-104"></span><span>    </span><span class="hs-pragma">{-# OVERLAPPABLE</span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-105"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071244"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679071244"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Reader.MonadReader</span></span><span> </span><span class="annot"><a href="#local-6989586621679071243"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071244"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-106"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Reader.MonadReader</span></span><span> </span><span class="annot"><a href="#local-6989586621679071243"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071244"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-105"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069773"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679069773"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Reader.MonadReader</span></span><span> </span><span class="annot"><a href="#local-6989586621679069772"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069773"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-106"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Reader.MonadReader</span></span><span> </span><span class="annot"><a href="#local-6989586621679069772"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069773"><span class="hs-identifier hs-type">m</span></a></span><span>
 </span><span id="line-107"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-108"></span><span>    </span><span id="local-6989586621679071237"><span class="annot"><span class="annottext">ask :: m r
+</span><span id="line-108"></span><span>    </span><span id="local-6989586621679069766"><span class="annot"><span class="annottext">ask :: m r
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var">ask</span></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-109"></span><span>        </span><span class="annot"><span class="annottext">Reduced m r -&gt; m r
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">Reduced m r
 forall r (m :: * -&gt; *). MonadReader r m =&gt; m r
 </span><span class="hs-identifier hs-var">Reader.ask</span></span><span>
-</span><span id="line-110"></span><span>    </span><span id="local-6989586621679071235"><span class="annot"><span class="annottext">local :: (r -&gt; r) -&gt; m a -&gt; m a
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">local</span></span></span><span> </span><span id="local-6989586621679071233"><span class="annot"><span class="annottext">r -&gt; r
-</span><a href="#local-6989586621679071233"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679071232"><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071232"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-110"></span><span>    </span><span id="local-6989586621679069764"><span class="annot"><span class="annottext">local :: (r -&gt; r) -&gt; m a -&gt; m a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">local</span></span></span><span> </span><span id="local-6989586621679069762"><span class="annot"><span class="annottext">r -&gt; r
+</span><a href="#local-6989586621679069762"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679069761"><span class="annot"><span class="annottext">m a
+</span><a href="#local-6989586621679069761"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-111"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
@@ -337,13 +337,13 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(r -&gt; r) -&gt; Reduced m a -&gt; Reduced m a
 forall r (m :: * -&gt; *) a. MonadReader r m =&gt; (r -&gt; r) -&gt; m a -&gt; m a
 </span><span class="hs-identifier hs-var">Reader.local</span></span><span> </span><span class="annot"><span class="annottext">r -&gt; r
-</span><a href="#local-6989586621679071233"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
+</span><a href="#local-6989586621679069762"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071232"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-112"></span><span>    </span><span id="local-6989586621679071231"><span class="annot"><span class="annottext">reader :: (r -&gt; a) -&gt; m a
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">reader</span></span></span><span> </span><span id="local-6989586621679071229"><span class="annot"><span class="annottext">r -&gt; a
-</span><a href="#local-6989586621679071229"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679069761"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-112"></span><span>    </span><span id="local-6989586621679069760"><span class="annot"><span class="annottext">reader :: (r -&gt; a) -&gt; m a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">reader</span></span></span><span> </span><span id="local-6989586621679069758"><span class="annot"><span class="annottext">r -&gt; a
+</span><a href="#local-6989586621679069758"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-113"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
@@ -351,23 +351,23 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(r -&gt; a) -&gt; Reduced m a
 forall r (m :: * -&gt; *) a. MonadReader r m =&gt; (r -&gt; a) -&gt; m a
 </span><span class="hs-identifier hs-var">Reader.reader</span></span><span> </span><span class="annot"><span class="annottext">r -&gt; a
-</span><a href="#local-6989586621679071229"><span class="hs-identifier hs-var">f</span></a></span></span></span><span>
+</span><a href="#local-6989586621679069758"><span class="hs-identifier hs-var">f</span></a></span></span></span><span>
 </span><span id="line-114"></span><span>
-</span><span id="line-115"></span><span id="local-6989586621679071227"><span id="local-6989586621679071228"><span class="hs-keyword">instance</span><span>
+</span><span id="line-115"></span><span id="local-6989586621679069756"><span id="local-6989586621679069757"><span class="hs-keyword">instance</span><span>
 </span><span id="line-116"></span><span>    </span><span class="hs-pragma">{-# OVERLAPPABLE</span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-117"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071228"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679071228"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">State.MonadState</span></span><span> </span><span class="annot"><a href="#local-6989586621679071227"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071228"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-118"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">State.MonadState</span></span><span> </span><span class="annot"><a href="#local-6989586621679071227"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071228"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-117"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069757"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679069757"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">State.MonadState</span></span><span> </span><span class="annot"><a href="#local-6989586621679069756"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069757"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-118"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">State.MonadState</span></span><span> </span><span class="annot"><a href="#local-6989586621679069756"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069757"><span class="hs-identifier hs-type">m</span></a></span><span>
 </span><span id="line-119"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-120"></span><span>    </span><span id="local-6989586621679071221"><span class="annot"><span class="annottext">get :: m s
+</span><span id="line-120"></span><span>    </span><span id="local-6989586621679069750"><span class="annot"><span class="annottext">get :: m s
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var">get</span></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-121"></span><span>        </span><span class="annot"><span class="annottext">Reduced m s -&gt; m s
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">Reduced m s
 forall s (m :: * -&gt; *). MonadState s m =&gt; m s
 </span><span class="hs-identifier hs-var">State.get</span></span><span>
-</span><span id="line-122"></span><span>    </span><span id="local-6989586621679071219"><span class="annot"><span class="annottext">put :: s -&gt; m ()
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">put</span></span></span><span> </span><span id="local-6989586621679071217"><span class="annot"><span class="annottext">s
-</span><a href="#local-6989586621679071217"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-122"></span><span>    </span><span id="local-6989586621679069748"><span class="annot"><span class="annottext">put :: s -&gt; m ()
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">put</span></span></span><span> </span><span id="local-6989586621679069746"><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679069746"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-123"></span><span>        </span><span class="annot"><span class="annottext">Reduced m () -&gt; m ()
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m () -&gt; m ()) -&gt; Reduced m () -&gt; m ()
@@ -375,10 +375,10 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">s -&gt; Reduced m ()
 forall s (m :: * -&gt; *). MonadState s m =&gt; s -&gt; m ()
 </span><span class="hs-identifier hs-var">State.put</span></span><span> </span><span class="annot"><span class="annottext">s
-</span><a href="#local-6989586621679071217"><span class="hs-identifier hs-var">x</span></a></span><span>
-</span><span id="line-124"></span><span>    </span><span id="local-6989586621679071216"><span class="annot"><span class="annottext">state :: (s -&gt; (a, s)) -&gt; m a
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">state</span></span></span><span> </span><span id="local-6989586621679071214"><span class="annot"><span class="annottext">s -&gt; (a, s)
-</span><a href="#local-6989586621679071214"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679069746"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-124"></span><span>    </span><span id="local-6989586621679069745"><span class="annot"><span class="annottext">state :: (s -&gt; (a, s)) -&gt; m a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">state</span></span></span><span> </span><span id="local-6989586621679069743"><span class="annot"><span class="annottext">s -&gt; (a, s)
+</span><a href="#local-6989586621679069743"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-125"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
@@ -386,16 +386,16 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(s -&gt; (a, s)) -&gt; Reduced m a
 forall s (m :: * -&gt; *) a. MonadState s m =&gt; (s -&gt; (a, s)) -&gt; m a
 </span><span class="hs-identifier hs-var">State.state</span></span><span> </span><span class="annot"><span class="annottext">s -&gt; (a, s)
-</span><a href="#local-6989586621679071214"><span class="hs-identifier hs-var">f</span></a></span></span></span><span>
+</span><a href="#local-6989586621679069743"><span class="hs-identifier hs-var">f</span></a></span></span></span><span>
 </span><span id="line-126"></span><span>
-</span><span id="line-127"></span><span id="local-6989586621679071212"><span id="local-6989586621679071213"><span class="hs-keyword">instance</span><span>
+</span><span id="line-127"></span><span id="local-6989586621679069741"><span id="local-6989586621679069742"><span class="hs-keyword">instance</span><span>
 </span><span id="line-128"></span><span>    </span><span class="hs-pragma">{-# OVERLAPPABLE</span><span> </span><span class="hs-pragma">#-}</span><span>
-</span><span id="line-129"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071213"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679071213"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679071212"><span class="hs-identifier hs-type">w</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Writer.MonadWriter</span></span><span> </span><span class="annot"><a href="#local-6989586621679071212"><span class="hs-identifier hs-type">w</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071213"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
-</span><span id="line-130"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Writer.MonadWriter</span></span><span> </span><span class="annot"><a href="#local-6989586621679071212"><span class="hs-identifier hs-type">w</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071213"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-129"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069742"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679069742"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679069741"><span class="hs-identifier hs-type">w</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Writer.MonadWriter</span></span><span> </span><span class="annot"><a href="#local-6989586621679069741"><span class="hs-identifier hs-type">w</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069742"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-130"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Writer.MonadWriter</span></span><span> </span><span class="annot"><a href="#local-6989586621679069741"><span class="hs-identifier hs-type">w</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679069742"><span class="hs-identifier hs-type">m</span></a></span><span>
 </span><span id="line-131"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-132"></span><span>    </span><span id="local-6989586621679071204"><span class="annot"><span class="annottext">writer :: (a, w) -&gt; m a
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">writer</span></span></span><span> </span><span id="local-6989586621679071202"><span class="annot"><span class="annottext">(a, w)
-</span><a href="#local-6989586621679071202"><span class="hs-identifier hs-var">aw</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-132"></span><span>    </span><span id="local-6989586621679069733"><span class="annot"><span class="annottext">writer :: (a, w) -&gt; m a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">writer</span></span></span><span> </span><span id="local-6989586621679069731"><span class="annot"><span class="annottext">(a, w)
+</span><a href="#local-6989586621679069731"><span class="hs-identifier hs-var">aw</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-133"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
@@ -403,10 +403,10 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(a, w) -&gt; Reduced m a
 forall w (m :: * -&gt; *) a. MonadWriter w m =&gt; (a, w) -&gt; m a
 </span><span class="hs-identifier hs-var">Writer.writer</span></span><span> </span><span class="annot"><span class="annottext">(a, w)
-</span><a href="#local-6989586621679071202"><span class="hs-identifier hs-var">aw</span></a></span><span>
-</span><span id="line-134"></span><span>    </span><span id="local-6989586621679071201"><span class="annot"><span class="annottext">tell :: w -&gt; m ()
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">tell</span></span></span><span> </span><span id="local-6989586621679071199"><span class="annot"><span class="annottext">w
-</span><a href="#local-6989586621679071199"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679069731"><span class="hs-identifier hs-var">aw</span></a></span><span>
+</span><span id="line-134"></span><span>    </span><span id="local-6989586621679069730"><span class="annot"><span class="annottext">tell :: w -&gt; m ()
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">tell</span></span></span><span> </span><span id="local-6989586621679069728"><span class="annot"><span class="annottext">w
+</span><a href="#local-6989586621679069728"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-135"></span><span>        </span><span class="annot"><span class="annottext">Reduced m () -&gt; m ()
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m () -&gt; m ()) -&gt; Reduced m () -&gt; m ()
@@ -414,10 +414,10 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">w -&gt; Reduced m ()
 forall w (m :: * -&gt; *). MonadWriter w m =&gt; w -&gt; m ()
 </span><span class="hs-identifier hs-var">Writer.tell</span></span><span> </span><span class="annot"><span class="annottext">w
-</span><a href="#local-6989586621679071199"><span class="hs-identifier hs-var">w</span></a></span><span>
-</span><span id="line-136"></span><span>    </span><span id="local-6989586621679071198"><span class="annot"><span class="annottext">listen :: m a -&gt; m (a, w)
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">listen</span></span></span><span> </span><span id="local-6989586621679071196"><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071196"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679069728"><span class="hs-identifier hs-var">w</span></a></span><span>
+</span><span id="line-136"></span><span>    </span><span id="local-6989586621679069727"><span class="annot"><span class="annottext">listen :: m a -&gt; m (a, w)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">listen</span></span></span><span> </span><span id="local-6989586621679069725"><span class="annot"><span class="annottext">m a
+</span><a href="#local-6989586621679069725"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-137"></span><span>        </span><span class="annot"><span class="annottext">Reduced m (a, w) -&gt; m (a, w)
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m (a, w) -&gt; m (a, w)) -&gt; Reduced m (a, w) -&gt; m (a, w)
@@ -427,10 +427,10 @@ forall w (m :: * -&gt; *) a. MonadWriter w m =&gt; m a -&gt; m (a, w)
 </span><span class="hs-identifier hs-var">Writer.listen</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">m a
-</span><a href="#local-6989586621679071196"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-138"></span><span>    </span><span id="local-6989586621679071195"><span class="annot"><span class="annottext">pass :: m (a, w -&gt; w) -&gt; m a
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var">pass</span></span></span><span> </span><span id="local-6989586621679071193"><span class="annot"><span class="annottext">m (a, w -&gt; w)
-</span><a href="#local-6989586621679071193"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679069725"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-138"></span><span>    </span><span id="local-6989586621679069724"><span class="annot"><span class="annottext">pass :: m (a, w -&gt; w) -&gt; m a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">pass</span></span></span><span> </span><span id="local-6989586621679069722"><span class="annot"><span class="annottext">m (a, w -&gt; w)
+</span><a href="#local-6989586621679069722"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-139"></span><span>        </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
 forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
 </span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
@@ -440,5 +440,5 @@ forall w (m :: * -&gt; *) a. MonadWriter w m =&gt; m (a, w -&gt; w) -&gt; m a
 </span><span class="hs-identifier hs-var">Writer.pass</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m (a, w -&gt; w) -&gt; Reduced m (a, w -&gt; w)
 forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
 </span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="annot"><span class="annottext">m (a, w -&gt; w)
-</span><a href="#local-6989586621679071193"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span></span></span><span>
+</span><a href="#local-6989586621679069722"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span></span></span><span>
 </span><span id="line-140"></span></pre></body></html>

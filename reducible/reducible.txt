@@ -3,7 +3,7 @@
 
 
 -- | Please see the README on GitHub at
---   <a>https://github.com/githubuser/reducible#readme</a>
+--   <a>https://github.com/fullstack-development/reducible#readme</a>
 @package reducible
 @version 0.1.0.20220514
 

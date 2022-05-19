@@ -1,0 +1,723 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DefaultSignatures #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DerivingStrategies #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE DerivingVia #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE KindSignatures #-}</span><span>
+</span><span id="line-7"></span><span class="hs-pragma">{-# LANGUAGE QuantifiedConstraints #-}</span><span>
+</span><span id="line-8"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-9"></span><span class="hs-pragma">{-# LANGUAGE TemplateHaskell #-}</span><span>
+</span><span id="line-10"></span><span class="hs-pragma">{-# LANGUAGE TypeApplications #-}</span><span>
+</span><span id="line-11"></span><span class="hs-pragma">{-# LANGUAGE TypeFamilies #-}</span><span>
+</span><span id="line-12"></span><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-comment">{-| This is the logger/database example from the main module, written here
+    to ensure that is actually typechecks and works.
+-}</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Reducible.Example</span><span>
+</span><span id="line-18"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.IO.Class</span></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Trans.Class</span></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Trans.Except</span></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Trans.Reader</span></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Trans.State.Lazy</span></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Trans.Writer.CPS</span></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Reducible.html"><span class="hs-identifier">Control.Reducible</span></a></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.IORef</span></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">System.IO</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">IO</span></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">data</span><span> </span><span id="Connection"><span class="annot"><a href="Control.Reducible.Example.html#Connection"><span class="hs-identifier hs-var">Connection</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Connection"><span class="annot"><a href="Control.Reducible.Example.html#Connection"><span class="hs-identifier hs-var">Connection</span></a></span></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">newtype</span><span> </span><span id="DatabaseQuery"><span class="annot"><a href="Control.Reducible.Example.html#DatabaseQuery"><span class="hs-identifier hs-var">DatabaseQuery</span></a></span></span><span> </span><span id="local-6989586621679071015"><span class="annot"><a href="#local-6989586621679071015"><span class="hs-identifier hs-type">r</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="DatabaseQuery"><span class="annot"><a href="Control.Reducible.Example.html#DatabaseQuery"><span class="hs-identifier hs-var">DatabaseQuery</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679071015"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">type</span><span> </span><span id="Text"><span class="annot"><a href="Control.Reducible.Example.html#Text"><span class="hs-identifier hs-var">Text</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span id="local-6989586621679071112"><span class="annot"><a href="Control.Reducible.Example.html#startQuery"><span class="hs-identifier hs-type">startQuery</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Control.Reducible.Example.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Control.Reducible.Example.html#DatabaseQuery"><span class="hs-identifier hs-type">DatabaseQuery</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071112"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-39"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679071112"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span></span><span>
+</span><span id="line-40"></span><span id="startQuery"><span class="annot"><span class="annottext">startQuery :: Connection -&gt; DatabaseQuery r -&gt; IO (IORef [r])
+</span><a href="Control.Reducible.Example.html#startQuery"><span class="hs-identifier hs-var hs-var">startQuery</span></a></span></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="Control.Reducible.Example.html#Connection"><span class="hs-identifier hs-var">Connection</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Example.html#DatabaseQuery"><span class="hs-identifier hs-type">DatabaseQuery</span></a></span><span> </span><span id="local-6989586621679071011"><span class="annot"><span class="annottext">[r]
+</span><a href="#local-6989586621679071011"><span class="hs-identifier hs-var">rs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><span class="annottext">[r] -&gt; IO (IORef [r])
+forall a. a -&gt; IO (IORef a)
+</span><span class="hs-identifier hs-var">newIORef</span></span><span> </span><span class="annot"><span class="annottext">[r]
+</span><a href="#local-6989586621679071011"><span class="hs-identifier hs-var">rs</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span id="local-6989586621679071111"><span class="annot"><a href="Control.Reducible.Example.html#getNextRecordMaybe"><span class="hs-identifier hs-type">getNextRecordMaybe</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Control.Reducible.Example.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679071111"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679071111"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-47"></span><span id="getNextRecordMaybe"><span class="annot"><span class="annottext">getNextRecordMaybe :: Connection -&gt; IORef [r] -&gt; IO (Maybe r)
+</span><a href="Control.Reducible.Example.html#getNextRecordMaybe"><span class="hs-identifier hs-var hs-var">getNextRecordMaybe</span></a></span></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="Control.Reducible.Example.html#Connection"><span class="hs-identifier hs-var">Connection</span></a></span><span> </span><span id="local-6989586621679071008"><span class="annot"><span class="annottext">IORef [r]
+</span><a href="#local-6989586621679071008"><span class="hs-identifier hs-var">ref</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-48"></span><span>    </span><span id="local-6989586621679071007"><span class="annot"><span class="annottext">[r]
+</span><a href="#local-6989586621679071007"><span class="hs-identifier hs-var">rs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IORef [r] -&gt; IO [r]
+forall a. IORef a -&gt; IO a
+</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef [r]
+</span><a href="#local-6989586621679071008"><span class="hs-identifier hs-var">ref</span></a></span><span>
+</span><span id="line-49"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[r]
+</span><a href="#local-6989586621679071007"><span class="hs-identifier hs-var">rs</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-50"></span><span>        </span><span id="local-6989586621679071005"><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679071005"><span class="hs-identifier hs-var">rh</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679071004"><span class="annot"><span class="annottext">[r]
+</span><a href="#local-6989586621679071004"><span class="hs-identifier hs-var">rt</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-51"></span><span>            </span><span class="annot"><span class="annottext">IORef [r] -&gt; [r] -&gt; IO ()
+forall a. IORef a -&gt; a -&gt; IO ()
+</span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef [r]
+</span><a href="#local-6989586621679071008"><span class="hs-identifier hs-var">ref</span></a></span><span> </span><span class="annot"><span class="annottext">[r]
+</span><a href="#local-6989586621679071004"><span class="hs-identifier hs-var">rt</span></a></span><span>
+</span><span id="line-52"></span><span>            </span><span class="annot"><span class="annottext">Maybe r -&gt; IO (Maybe r)
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">r -&gt; Maybe r
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679071005"><span class="hs-identifier hs-var">rh</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-54"></span><span>            </span><span class="annot"><span class="annottext">Maybe r -&gt; IO (Maybe r)
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Maybe r
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span id="local-6989586621679071110"><span class="annot"><a href="Control.Reducible.Example.html#closeQuery"><span class="hs-identifier hs-type">closeQuery</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-57"></span><span>    </span><span class="annot"><a href="Control.Reducible.Example.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679071110"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-60"></span><span id="closeQuery"><span class="annot"><span class="annottext">closeQuery :: Connection -&gt; IORef [r] -&gt; IO ()
+</span><a href="Control.Reducible.Example.html#closeQuery"><span class="hs-identifier hs-var hs-var">closeQuery</span></a></span></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="Control.Reducible.Example.html#Connection"><span class="hs-identifier hs-var">Connection</span></a></span><span> </span><span id="local-6989586621679071001"><span class="annot"><span class="annottext">IORef [r]
+</span><a href="#local-6989586621679071001"><span class="hs-identifier hs-var">_ref</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><span class="annottext">() -&gt; IO ()
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-keyword">class</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679071120"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="MonadDatabase"><span class="annot"><a href="Control.Reducible.Example.html#MonadDatabase"><span class="hs-identifier hs-var">MonadDatabase</span></a></span></span><span> </span><span id="local-6989586621679071120"><span class="annot"><a href="#local-6989586621679071120"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-64"></span><span>    </span><span id="local-6989586621679071122"><span id="local-6989586621679071123"><span id="runReturningMany"><span class="annot"><a href="Control.Reducible.Example.html#runReturningMany"><span class="hs-identifier hs-type">runReturningMany</span></a></span></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-65"></span><span>        </span><span class="annot"><a href="Control.Reducible.Example.html#DatabaseQuery"><span class="hs-identifier hs-type">DatabaseQuery</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071123"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-66"></span><span>        </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679071120"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679071123"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679071120"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071122"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-67"></span><span>        </span><span class="annot"><a href="#local-6989586621679071120"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071122"><span class="hs-identifier hs-type">a</span></a></span></span></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="hs-keyword">newtype</span><span> </span><span id="DatabaseT"><span class="annot"><a href="Control.Reducible.Example.html#DatabaseT"><span class="hs-identifier hs-var">DatabaseT</span></a></span></span><span> </span><span id="local-6989586621679071117"><span class="annot"><a href="#local-6989586621679071117"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span id="local-6989586621679071116"><span class="annot"><a href="#local-6989586621679071116"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="DatabaseT"><span class="annot"><a href="Control.Reducible.Example.html#DatabaseT"><span class="hs-identifier hs-var">DatabaseT</span></a></span></span><span>
+</span><span id="line-70"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="runDatabaseT"><span class="annot"><span class="annottext">DatabaseT m a -&gt; Connection -&gt; m a
+</span><a href="Control.Reducible.Example.html#runDatabaseT"><span class="hs-identifier hs-var hs-var">runDatabaseT</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679071117"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071116"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-71"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-72"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679070994"><span id="local-6989586621679070996"><span class="annot"><span class="annottext">a -&gt; DatabaseT m b -&gt; DatabaseT m a
+(a -&gt; b) -&gt; DatabaseT m a -&gt; DatabaseT m b
+(forall a b. (a -&gt; b) -&gt; DatabaseT m a -&gt; DatabaseT m b)
+-&gt; (forall a b. a -&gt; DatabaseT m b -&gt; DatabaseT m a)
+-&gt; Functor (DatabaseT m)
+forall a b. a -&gt; DatabaseT m b -&gt; DatabaseT m a
+forall a b. (a -&gt; b) -&gt; DatabaseT m a -&gt; DatabaseT m b
+forall (m :: * -&gt; *) a b.
+Functor m =&gt;
+a -&gt; DatabaseT m b -&gt; DatabaseT m a
+forall (m :: * -&gt; *) a b.
+Functor m =&gt;
+(a -&gt; b) -&gt; DatabaseT m a -&gt; DatabaseT m b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; DatabaseT m b -&gt; DatabaseT m a
+$c&lt;$ :: forall (m :: * -&gt; *) a b.
+Functor m =&gt;
+a -&gt; DatabaseT m b -&gt; DatabaseT m a
+fmap :: (a -&gt; b) -&gt; DatabaseT m a -&gt; DatabaseT m b
+$cfmap :: forall (m :: * -&gt; *) a b.
+Functor m =&gt;
+(a -&gt; b) -&gt; DatabaseT m a -&gt; DatabaseT m b
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679070982"><span id="local-6989586621679070984"><span id="local-6989586621679070986"><span id="local-6989586621679070988"><span id="local-6989586621679070990"><span class="annot"><span class="annottext">Functor (DatabaseT m)
+a -&gt; DatabaseT m a
+Functor (DatabaseT m)
+-&gt; (forall a. a -&gt; DatabaseT m a)
+-&gt; (forall a b.
+    DatabaseT m (a -&gt; b) -&gt; DatabaseT m a -&gt; DatabaseT m b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c) -&gt; DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m c)
+-&gt; (forall a b. DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m b)
+-&gt; (forall a b. DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m a)
+-&gt; Applicative (DatabaseT m)
+DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m b
+DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m a
+DatabaseT m (a -&gt; b) -&gt; DatabaseT m a -&gt; DatabaseT m b
+(a -&gt; b -&gt; c) -&gt; DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m c
+forall a. a -&gt; DatabaseT m a
+forall a b. DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m a
+forall a b. DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m b
+forall a b. DatabaseT m (a -&gt; b) -&gt; DatabaseT m a -&gt; DatabaseT m b
+forall a b c.
+(a -&gt; b -&gt; c) -&gt; DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m c
+forall (f :: * -&gt; *).
+Functor f
+-&gt; (forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+forall (m :: * -&gt; *). Applicative m =&gt; Functor (DatabaseT m)
+forall (m :: * -&gt; *) a. Applicative m =&gt; a -&gt; DatabaseT m a
+forall (m :: * -&gt; *) a b.
+Applicative m =&gt;
+DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m a
+forall (m :: * -&gt; *) a b.
+Applicative m =&gt;
+DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m b
+forall (m :: * -&gt; *) a b.
+Applicative m =&gt;
+DatabaseT m (a -&gt; b) -&gt; DatabaseT m a -&gt; DatabaseT m b
+forall (m :: * -&gt; *) a b c.
+Applicative m =&gt;
+(a -&gt; b -&gt; c) -&gt; DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m c
+&lt;* :: DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m a
+$c&lt;* :: forall (m :: * -&gt; *) a b.
+Applicative m =&gt;
+DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m a
+*&gt; :: DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m b
+$c*&gt; :: forall (m :: * -&gt; *) a b.
+Applicative m =&gt;
+DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m c
+$cliftA2 :: forall (m :: * -&gt; *) a b c.
+Applicative m =&gt;
+(a -&gt; b -&gt; c) -&gt; DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m c
+&lt;*&gt; :: DatabaseT m (a -&gt; b) -&gt; DatabaseT m a -&gt; DatabaseT m b
+$c&lt;*&gt; :: forall (m :: * -&gt; *) a b.
+Applicative m =&gt;
+DatabaseT m (a -&gt; b) -&gt; DatabaseT m a -&gt; DatabaseT m b
+pure :: a -&gt; DatabaseT m a
+$cpure :: forall (m :: * -&gt; *) a. Applicative m =&gt; a -&gt; DatabaseT m a
+$cp1Applicative :: forall (m :: * -&gt; *). Applicative m =&gt; Functor (DatabaseT m)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679070974"><span id="local-6989586621679070976"><span id="local-6989586621679070978"><span class="annot"><span class="annottext">Applicative (DatabaseT m)
+a -&gt; DatabaseT m a
+Applicative (DatabaseT m)
+-&gt; (forall a b.
+    DatabaseT m a -&gt; (a -&gt; DatabaseT m b) -&gt; DatabaseT m b)
+-&gt; (forall a b. DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m b)
+-&gt; (forall a. a -&gt; DatabaseT m a)
+-&gt; Monad (DatabaseT m)
+DatabaseT m a -&gt; (a -&gt; DatabaseT m b) -&gt; DatabaseT m b
+DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m b
+forall a. a -&gt; DatabaseT m a
+forall a b. DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m b
+forall a b. DatabaseT m a -&gt; (a -&gt; DatabaseT m b) -&gt; DatabaseT m b
+forall (m :: * -&gt; *). Monad m =&gt; Applicative (DatabaseT m)
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; DatabaseT m a
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m b
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+DatabaseT m a -&gt; (a -&gt; DatabaseT m b) -&gt; DatabaseT m b
+forall (m :: * -&gt; *).
+Applicative m
+-&gt; (forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; DatabaseT m a
+$creturn :: forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; DatabaseT m a
+&gt;&gt; :: DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m b
+$c&gt;&gt; :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+DatabaseT m a -&gt; DatabaseT m b -&gt; DatabaseT m b
+&gt;&gt;= :: DatabaseT m a -&gt; (a -&gt; DatabaseT m b) -&gt; DatabaseT m b
+$c&gt;&gt;= :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+DatabaseT m a -&gt; (a -&gt; DatabaseT m b) -&gt; DatabaseT m b
+$cp1Monad :: forall (m :: * -&gt; *). Monad m =&gt; Applicative (DatabaseT m)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679070970"><span class="annot"><span class="annottext">Monad (DatabaseT m)
+Monad (DatabaseT m)
+-&gt; (forall a. IO a -&gt; DatabaseT m a) -&gt; MonadIO (DatabaseT m)
+IO a -&gt; DatabaseT m a
+forall a. IO a -&gt; DatabaseT m a
+forall (m :: * -&gt; *).
+Monad m -&gt; (forall a. IO a -&gt; m a) -&gt; MonadIO m
+forall (m :: * -&gt; *). MonadIO m =&gt; Monad (DatabaseT m)
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; DatabaseT m a
+liftIO :: IO a -&gt; DatabaseT m a
+$cliftIO :: forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; DatabaseT m a
+$cp1MonadIO :: forall (m :: * -&gt; *). MonadIO m =&gt; Monad (DatabaseT m)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var">MonadIO</span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span>        </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071117"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679070967"><span class="annot"><span class="annottext">m a -&gt; DatabaseT m a
+(forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; DatabaseT m a)
+-&gt; MonadTrans DatabaseT
+forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; DatabaseT m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *).
+(forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; t m a) -&gt; MonadTrans t
+lift :: m a -&gt; DatabaseT m a
+$clift :: forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; DatabaseT m a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">MonadTrans</span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>        </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span id="local-6989586621679070965"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679070965"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#MonadDatabase"><span class="hs-identifier hs-type">MonadDatabase</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Example.html#DatabaseT"><span class="hs-identifier hs-type">DatabaseT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070965"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-78"></span><span>    </span><span id="local-6989586621679070961"><span class="annot"><span class="annottext">runReturningMany :: DatabaseQuery r
+-&gt; (DatabaseT m (Maybe r) -&gt; DatabaseT m a) -&gt; DatabaseT m a
+</span><a href="#local-6989586621679070961"><span class="hs-identifier hs-var hs-var hs-var hs-var">runReturningMany</span></a></span></span><span> </span><span id="local-6989586621679070960"><span class="annot"><span class="annottext">DatabaseQuery r
+</span><a href="#local-6989586621679070960"><span class="hs-identifier hs-var">query</span></a></span></span><span> </span><span id="local-6989586621679070959"><span class="annot"><span class="annottext">DatabaseT m (Maybe r) -&gt; DatabaseT m a
+</span><a href="#local-6989586621679070959"><span class="hs-identifier hs-var">handler</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Connection -&gt; m a) -&gt; DatabaseT m a
+forall (m :: * -&gt; *) a. (Connection -&gt; m a) -&gt; DatabaseT m a
+</span><a href="Control.Reducible.Example.html#DatabaseT"><span class="hs-identifier hs-var">DatabaseT</span></a></span><span> </span><span class="annot"><span class="annottext">((Connection -&gt; m a) -&gt; DatabaseT m a)
+-&gt; (Connection -&gt; m a) -&gt; DatabaseT m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679070958"><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679070958"><span class="hs-identifier hs-var">conn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-79"></span><span>        </span><span id="local-6989586621679070957"><span class="annot"><span class="annottext">IORef [r]
+</span><a href="#local-6989586621679070957"><span class="hs-identifier hs-var">queryTag</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (IORef [r]) -&gt; m (IORef [r])
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (IORef [r]) -&gt; m (IORef [r]))
+-&gt; IO (IORef [r]) -&gt; m (IORef [r])
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Connection -&gt; DatabaseQuery r -&gt; IO (IORef [r])
+forall r. Connection -&gt; DatabaseQuery r -&gt; IO (IORef [r])
+</span><a href="Control.Reducible.Example.html#startQuery"><span class="hs-identifier hs-var">startQuery</span></a></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679070958"><span class="hs-identifier hs-var">conn</span></a></span><span> </span><span class="annot"><span class="annottext">DatabaseQuery r
+</span><a href="#local-6989586621679070960"><span class="hs-identifier hs-var">query</span></a></span><span>
+</span><span id="line-80"></span><span>        </span><span id="local-6989586621679070955"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070955"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-81"></span><span>            </span><span class="annot"><span class="annottext">DatabaseT m a -&gt; Connection -&gt; m a
+forall (m :: * -&gt; *) a. DatabaseT m a -&gt; Connection -&gt; m a
+</span><a href="Control.Reducible.Example.html#runDatabaseT"><span class="hs-identifier hs-var hs-var">runDatabaseT</span></a></span><span>
+</span><span id="line-82"></span><span>                </span><span class="hs-special">(</span><span class="annot"><span class="annottext">DatabaseT m (Maybe r) -&gt; DatabaseT m a
+</span><a href="#local-6989586621679070959"><span class="hs-identifier hs-var">handler</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">IO (Maybe r) -&gt; DatabaseT m (Maybe r)
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (Maybe r) -&gt; DatabaseT m (Maybe r))
+-&gt; IO (Maybe r) -&gt; DatabaseT m (Maybe r)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Connection -&gt; IORef [r] -&gt; IO (Maybe r)
+forall r. Connection -&gt; IORef [r] -&gt; IO (Maybe r)
+</span><a href="Control.Reducible.Example.html#getNextRecordMaybe"><span class="hs-identifier hs-var">getNextRecordMaybe</span></a></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679070958"><span class="hs-identifier hs-var">conn</span></a></span><span> </span><span class="annot"><span class="annottext">IORef [r]
+</span><a href="#local-6989586621679070957"><span class="hs-identifier hs-var">queryTag</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span>                </span><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679070958"><span class="hs-identifier hs-var">conn</span></a></span><span>
+</span><span id="line-84"></span><span>        </span><span class="annot"><span class="annottext">IO () -&gt; m ()
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Connection -&gt; IORef [r] -&gt; IO ()
+forall r. Connection -&gt; IORef [r] -&gt; IO ()
+</span><a href="Control.Reducible.Example.html#closeQuery"><span class="hs-identifier hs-var">closeQuery</span></a></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679070958"><span class="hs-identifier hs-var">conn</span></a></span><span> </span><span class="annot"><span class="annottext">IORef [r]
+</span><a href="#local-6989586621679070957"><span class="hs-identifier hs-var">queryTag</span></a></span><span>
+</span><span id="line-85"></span><span>        </span><span class="annot"><span class="annottext">a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070955"><span class="hs-identifier hs-var">result</span></a></span></span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span id="local-6989586621679070954"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Example.html#DatabaseT"><span class="hs-identifier hs-type">DatabaseT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070954"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-88"></span><span>    </span><span class="hs-keyword">type</span><span> </span><span id="Reduced"><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-var">Reduced</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Example.html#DatabaseT"><span class="hs-identifier hs-type">DatabaseT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070954"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-89"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#Connection"><span class="hs-identifier hs-type">Connection</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070954"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-90"></span><span>    </span><span id="local-6989586621679070950"><span class="annot"><span class="annottext">fromReduced :: Reduced (DatabaseT m) a -&gt; DatabaseT m a
+</span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromReduced</span></a></span></span><span> </span><span id="local-6989586621679070948"><span class="annot"><span class="annottext">Reduced (DatabaseT m) a
+</span><a href="#local-6989586621679070948"><span class="hs-identifier hs-var">asReader</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Connection -&gt; m a) -&gt; DatabaseT m a
+forall (m :: * -&gt; *) a. (Connection -&gt; m a) -&gt; DatabaseT m a
+</span><a href="Control.Reducible.Example.html#DatabaseT"><span class="hs-identifier hs-var">DatabaseT</span></a></span><span> </span><span class="annot"><span class="annottext">((Connection -&gt; m a) -&gt; DatabaseT m a)
+-&gt; (Connection -&gt; m a) -&gt; DatabaseT m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679070947"><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679070947"><span class="hs-identifier hs-var">conn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-91"></span><span>        </span><span class="annot"><span class="annottext">ReaderT Connection m a -&gt; Connection -&gt; m a
+forall r (m :: * -&gt; *) a. ReaderT r m a -&gt; r -&gt; m a
+</span><span class="hs-identifier hs-var hs-var">runReaderT</span></span><span> </span><span class="annot"><span class="annottext">ReaderT Connection m a
+Reduced (DatabaseT m) a
+</span><a href="#local-6989586621679070948"><span class="hs-identifier hs-var">asReader</span></a></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679070947"><span class="hs-identifier hs-var">conn</span></a></span><span>
+</span><span id="line-92"></span><span>    </span><span id="local-6989586621679070945"><span class="annot"><span class="annottext">toReduced :: DatabaseT m a -&gt; Reduced (DatabaseT m) a
+</span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var hs-var hs-var hs-var">toReduced</span></a></span></span><span> </span><span id="local-6989586621679070943"><span class="annot"><span class="annottext">DatabaseT m a
+</span><a href="#local-6989586621679070943"><span class="hs-identifier hs-var">asDb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Connection -&gt; m a) -&gt; ReaderT Connection m a
+forall r (m :: * -&gt; *) a. (r -&gt; m a) -&gt; ReaderT r m a
+</span><span class="hs-identifier hs-var">ReaderT</span></span><span> </span><span class="annot"><span class="annottext">((Connection -&gt; m a) -&gt; ReaderT Connection m a)
+-&gt; (Connection -&gt; m a) -&gt; ReaderT Connection m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679070941"><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679070941"><span class="hs-identifier hs-var">conn</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-93"></span><span>        </span><span class="annot"><span class="annottext">DatabaseT m a -&gt; Connection -&gt; m a
+forall (m :: * -&gt; *) a. DatabaseT m a -&gt; Connection -&gt; m a
+</span><a href="Control.Reducible.Example.html#runDatabaseT"><span class="hs-identifier hs-var hs-var">runDatabaseT</span></a></span><span> </span><span class="annot"><span class="annottext">DatabaseT m a
+</span><a href="#local-6989586621679070943"><span class="hs-identifier hs-var">asDb</span></a></span><span> </span><span class="annot"><span class="annottext">Connection
+</span><a href="#local-6989586621679070941"><span class="hs-identifier hs-var">conn</span></a></span></span><span>
+</span><span id="line-94"></span><span>
+</span><span id="line-95"></span><span id="local-6989586621679070939"><span id="local-6989586621679070940"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#MonadDatabase"><span class="hs-identifier hs-type">MonadDatabase</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070940"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#MonadDatabase"><span class="hs-identifier hs-type">MonadDatabase</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><a href="#local-6989586621679070939"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070940"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-96"></span><span>    </span><span id="local-6989586621679070936"><span class="annot"><span class="annottext">runReturningMany :: DatabaseQuery r
+-&gt; (ReaderT r m (Maybe r) -&gt; ReaderT r m a) -&gt; ReaderT r m a
+</span><a href="#local-6989586621679070936"><span class="hs-identifier hs-var hs-var hs-var hs-var">runReturningMany</span></a></span></span><span> </span><span id="local-6989586621679070935"><span class="annot"><span class="annottext">DatabaseQuery r
+</span><a href="#local-6989586621679070935"><span class="hs-identifier hs-var">query</span></a></span></span><span> </span><span id="local-6989586621679070934"><span class="annot"><span class="annottext">ReaderT r m (Maybe r) -&gt; ReaderT r m a
+</span><a href="#local-6989586621679070934"><span class="hs-identifier hs-var">handler</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(r -&gt; m a) -&gt; ReaderT r m a
+forall r (m :: * -&gt; *) a. (r -&gt; m a) -&gt; ReaderT r m a
+</span><span class="hs-identifier hs-var">ReaderT</span></span><span> </span><span class="annot"><span class="annottext">((r -&gt; m a) -&gt; ReaderT r m a) -&gt; (r -&gt; m a) -&gt; ReaderT r m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679070933"><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679070933"><span class="hs-identifier hs-var">context</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-97"></span><span>        </span><span class="annot"><span class="annottext">DatabaseQuery r -&gt; (m (Maybe r) -&gt; m a) -&gt; m a
+forall (m :: * -&gt; *) r a.
+MonadDatabase m =&gt;
+DatabaseQuery r -&gt; (m (Maybe r) -&gt; m a) -&gt; m a
+</span><a href="Control.Reducible.Example.html#runReturningMany"><span class="hs-identifier hs-var">runReturningMany</span></a></span><span>
+</span><span id="line-98"></span><span>            </span><span class="annot"><span class="annottext">DatabaseQuery r
+</span><a href="#local-6989586621679070935"><span class="hs-identifier hs-var">query</span></a></span><span>
+</span><span id="line-99"></span><span>            </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679070932"><span class="annot"><span class="annottext">m (Maybe r)
+</span><a href="#local-6989586621679070932"><span class="hs-identifier hs-var">source</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-100"></span><span>                </span><span class="annot"><span class="annottext">ReaderT r m a -&gt; r -&gt; m a
+forall r (m :: * -&gt; *) a. ReaderT r m a -&gt; r -&gt; m a
+</span><span class="hs-identifier hs-var hs-var">runReaderT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ReaderT r m (Maybe r) -&gt; ReaderT r m a
+</span><a href="#local-6989586621679070934"><span class="hs-identifier hs-var">handler</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m (Maybe r) -&gt; ReaderT r m (Maybe r)
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+(MonadTrans t, Monad m) =&gt;
+m a -&gt; t m a
+</span><span class="hs-identifier hs-var">lift</span></span><span> </span><span class="annot"><span class="annottext">m (Maybe r)
+</span><a href="#local-6989586621679070932"><span class="hs-identifier hs-var">source</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679070933"><span class="hs-identifier hs-var">context</span></a></span><span>
+</span><span id="line-101"></span><span>            </span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-102"></span><span>
+</span><span id="line-103"></span><span id="local-6989586621679070929"><span id="local-6989586621679070930"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#MonadDatabase"><span class="hs-identifier hs-type">MonadDatabase</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070930"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#MonadDatabase"><span class="hs-identifier hs-type">MonadDatabase</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><a href="#local-6989586621679070929"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070930"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-104"></span><span>    </span><span id="local-6989586621679070926"><span class="annot"><span class="annottext">runReturningMany :: DatabaseQuery r
+-&gt; (StateT s m (Maybe r) -&gt; StateT s m a) -&gt; StateT s m a
+</span><a href="#local-6989586621679070926"><span class="hs-identifier hs-var hs-var hs-var hs-var">runReturningMany</span></a></span></span><span> </span><span id="local-6989586621679070925"><span class="annot"><span class="annottext">DatabaseQuery r
+</span><a href="#local-6989586621679070925"><span class="hs-identifier hs-var">query</span></a></span></span><span> </span><span id="local-6989586621679070924"><span class="annot"><span class="annottext">StateT s m (Maybe r) -&gt; StateT s m a
+</span><a href="#local-6989586621679070924"><span class="hs-identifier hs-var">handler</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(s -&gt; m (a, s)) -&gt; StateT s m a
+forall s (m :: * -&gt; *) a. (s -&gt; m (a, s)) -&gt; StateT s m a
+</span><span class="hs-identifier hs-var">StateT</span></span><span> </span><span class="annot"><span class="annottext">((s -&gt; m (a, s)) -&gt; StateT s m a)
+-&gt; (s -&gt; m (a, s)) -&gt; StateT s m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679070922"><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679070922"><span class="hs-identifier hs-var">oldState</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-105"></span><span>        </span><span class="annot"><span class="annottext">DatabaseQuery r -&gt; (m (Maybe r) -&gt; m (a, s)) -&gt; m (a, s)
+forall (m :: * -&gt; *) r a.
+MonadDatabase m =&gt;
+DatabaseQuery r -&gt; (m (Maybe r) -&gt; m a) -&gt; m a
+</span><a href="Control.Reducible.Example.html#runReturningMany"><span class="hs-identifier hs-var">runReturningMany</span></a></span><span>
+</span><span id="line-106"></span><span>            </span><span class="annot"><span class="annottext">DatabaseQuery r
+</span><a href="#local-6989586621679070925"><span class="hs-identifier hs-var">query</span></a></span><span>
+</span><span id="line-107"></span><span>            </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679070921"><span class="annot"><span class="annottext">m (Maybe r)
+</span><a href="#local-6989586621679070921"><span class="hs-identifier hs-var">source</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-108"></span><span>                </span><span class="annot"><span class="annottext">StateT s m a -&gt; s -&gt; m (a, s)
+forall s (m :: * -&gt; *) a. StateT s m a -&gt; s -&gt; m (a, s)
+</span><span class="hs-identifier hs-var hs-var">runStateT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">StateT s m (Maybe r) -&gt; StateT s m a
+</span><a href="#local-6989586621679070924"><span class="hs-identifier hs-var">handler</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m (Maybe r) -&gt; StateT s m (Maybe r)
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+(MonadTrans t, Monad m) =&gt;
+m a -&gt; t m a
+</span><span class="hs-identifier hs-var">lift</span></span><span> </span><span class="annot"><span class="annottext">m (Maybe r)
+</span><a href="#local-6989586621679070921"><span class="hs-identifier hs-var">source</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679070922"><span class="hs-identifier hs-var">oldState</span></a></span><span>
+</span><span id="line-109"></span><span>            </span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span id="local-6989586621679070918"><span id="local-6989586621679070919"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#MonadDatabase"><span class="hs-identifier hs-type">MonadDatabase</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070919"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#MonadDatabase"><span class="hs-identifier hs-type">MonadDatabase</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="annot"><a href="#local-6989586621679070918"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070919"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-112"></span><span>    </span><span id="local-6989586621679070915"><span class="annot"><span class="annottext">runReturningMany :: DatabaseQuery r
+-&gt; (ExceptT e m (Maybe r) -&gt; ExceptT e m a) -&gt; ExceptT e m a
+</span><a href="#local-6989586621679070915"><span class="hs-identifier hs-var hs-var hs-var hs-var">runReturningMany</span></a></span></span><span> </span><span id="local-6989586621679070914"><span class="annot"><span class="annottext">DatabaseQuery r
+</span><a href="#local-6989586621679070914"><span class="hs-identifier hs-var">query</span></a></span></span><span> </span><span id="local-6989586621679070913"><span class="annot"><span class="annottext">ExceptT e m (Maybe r) -&gt; ExceptT e m a
+</span><a href="#local-6989586621679070913"><span class="hs-identifier hs-var">handler</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">m (Either e a) -&gt; ExceptT e m a
+forall e (m :: * -&gt; *) a. m (Either e a) -&gt; ExceptT e m a
+</span><span class="hs-identifier hs-var">ExceptT</span></span><span> </span><span class="annot"><span class="annottext">(m (Either e a) -&gt; ExceptT e m a)
+-&gt; m (Either e a) -&gt; ExceptT e m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-113"></span><span>        </span><span class="annot"><span class="annottext">DatabaseQuery r
+-&gt; (m (Maybe r) -&gt; m (Either e a)) -&gt; m (Either e a)
+forall (m :: * -&gt; *) r a.
+MonadDatabase m =&gt;
+DatabaseQuery r -&gt; (m (Maybe r) -&gt; m a) -&gt; m a
+</span><a href="Control.Reducible.Example.html#runReturningMany"><span class="hs-identifier hs-var">runReturningMany</span></a></span><span>
+</span><span id="line-114"></span><span>            </span><span class="annot"><span class="annottext">DatabaseQuery r
+</span><a href="#local-6989586621679070914"><span class="hs-identifier hs-var">query</span></a></span><span>
+</span><span id="line-115"></span><span>            </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679070911"><span class="annot"><span class="annottext">m (Maybe r)
+</span><a href="#local-6989586621679070911"><span class="hs-identifier hs-var">source</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-116"></span><span>                </span><span class="annot"><span class="annottext">ExceptT e m a -&gt; m (Either e a)
+forall e (m :: * -&gt; *) a. ExceptT e m a -&gt; m (Either e a)
+</span><span class="hs-identifier hs-var">runExceptT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ExceptT e m (Maybe r) -&gt; ExceptT e m a
+</span><a href="#local-6989586621679070913"><span class="hs-identifier hs-var">handler</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m (Maybe r) -&gt; ExceptT e m (Maybe r)
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+(MonadTrans t, Monad m) =&gt;
+m a -&gt; t m a
+</span><span class="hs-identifier hs-var">lift</span></span><span> </span><span class="annot"><span class="annottext">m (Maybe r)
+</span><a href="#local-6989586621679070911"><span class="hs-identifier hs-var">source</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-117"></span><span>            </span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-118"></span><span>
+</span><span id="line-119"></span><span id="local-6989586621679070909"><span class="hs-keyword">instance</span><span>
+</span><span id="line-120"></span><span>    </span><span class="hs-pragma">{-# OVERLAPPABLE</span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-121"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070909"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679070909"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#MonadDatabase"><span class="hs-identifier hs-type">MonadDatabase</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070909"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-122"></span><span>    </span><span class="annot"><a href="Control.Reducible.Example.html#MonadDatabase"><span class="hs-identifier hs-type">MonadDatabase</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070909"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-123"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-124"></span><span>    </span><span id="local-6989586621679070906"><span class="annot"><span class="annottext">runReturningMany :: DatabaseQuery r -&gt; (m (Maybe r) -&gt; m a) -&gt; m a
+</span><a href="#local-6989586621679070906"><span class="hs-identifier hs-var hs-var hs-var hs-var">runReturningMany</span></a></span></span><span> </span><span id="local-6989586621679070905"><span class="annot"><span class="annottext">DatabaseQuery r
+</span><a href="#local-6989586621679070905"><span class="hs-identifier hs-var">query</span></a></span></span><span> </span><span id="local-6989586621679070904"><span class="annot"><span class="annottext">m (Maybe r) -&gt; m a
+</span><a href="#local-6989586621679070904"><span class="hs-identifier hs-var">handler</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Reduced m a -&gt; m a
+forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
+</span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m a -&gt; m a) -&gt; Reduced m a -&gt; m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-125"></span><span>        </span><span class="annot"><span class="annottext">DatabaseQuery r
+-&gt; (Reduced m (Maybe r) -&gt; Reduced m a) -&gt; Reduced m a
+forall (m :: * -&gt; *) r a.
+MonadDatabase m =&gt;
+DatabaseQuery r -&gt; (m (Maybe r) -&gt; m a) -&gt; m a
+</span><a href="Control.Reducible.Example.html#runReturningMany"><span class="hs-identifier hs-var">runReturningMany</span></a></span><span>
+</span><span id="line-126"></span><span>            </span><span class="annot"><span class="annottext">DatabaseQuery r
+</span><a href="#local-6989586621679070905"><span class="hs-identifier hs-var">query</span></a></span><span>
+</span><span id="line-127"></span><span>            </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679070903"><span class="annot"><span class="annottext">Reduced m (Maybe r)
+</span><a href="#local-6989586621679070903"><span class="hs-identifier hs-var">source</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-128"></span><span>                </span><span class="annot"><span class="annottext">m a -&gt; Reduced m a
+forall (m :: * -&gt; *) a. Reducible m =&gt; m a -&gt; Reduced m a
+</span><a href="Control.Reducible.html#toReduced"><span class="hs-identifier hs-var">toReduced</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">m (Maybe r) -&gt; m a
+</span><a href="#local-6989586621679070904"><span class="hs-identifier hs-var">handler</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Reduced m (Maybe r) -&gt; m (Maybe r)
+forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
+</span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">Reduced m (Maybe r)
+</span><a href="#local-6989586621679070903"><span class="hs-identifier hs-var">source</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-129"></span><span>            </span><span class="hs-special">)</span></span><span>
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span class="hs-keyword">class</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679071032"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="MonadLogger"><span class="annot"><a href="Control.Reducible.Example.html#MonadLogger"><span class="hs-identifier hs-var">MonadLogger</span></a></span></span><span> </span><span id="local-6989586621679071032"><span class="annot"><a href="#local-6989586621679071032"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-132"></span><span>    </span><span id="logMessage"><span class="annot"><a href="Control.Reducible.Example.html#logMessage"><span class="hs-identifier hs-type">logMessage</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679071032"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span class="hs-keyword">newtype</span><span> </span><span id="LoggerT"><span class="annot"><a href="Control.Reducible.Example.html#LoggerT"><span class="hs-identifier hs-var">LoggerT</span></a></span></span><span> </span><span id="local-6989586621679071031"><span class="annot"><a href="#local-6989586621679071031"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span id="local-6989586621679071030"><span class="annot"><a href="#local-6989586621679071030"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="LoggerT"><span class="annot"><a href="Control.Reducible.Example.html#LoggerT"><span class="hs-identifier hs-var">LoggerT</span></a></span></span><span>
+</span><span id="line-135"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="runLoggerT"><span class="annot"><span class="annottext">LoggerT m a -&gt; Handle -&gt; m a
+</span><a href="Control.Reducible.Example.html#runLoggerT"><span class="hs-identifier hs-var hs-var">runLoggerT</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO.Handle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679071031"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679071030"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-136"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-137"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679070896"><span id="local-6989586621679070898"><span class="annot"><span class="annottext">a -&gt; LoggerT m b -&gt; LoggerT m a
+(a -&gt; b) -&gt; LoggerT m a -&gt; LoggerT m b
+(forall a b. (a -&gt; b) -&gt; LoggerT m a -&gt; LoggerT m b)
+-&gt; (forall a b. a -&gt; LoggerT m b -&gt; LoggerT m a)
+-&gt; Functor (LoggerT m)
+forall a b. a -&gt; LoggerT m b -&gt; LoggerT m a
+forall a b. (a -&gt; b) -&gt; LoggerT m a -&gt; LoggerT m b
+forall (m :: * -&gt; *) a b.
+Functor m =&gt;
+a -&gt; LoggerT m b -&gt; LoggerT m a
+forall (m :: * -&gt; *) a b.
+Functor m =&gt;
+(a -&gt; b) -&gt; LoggerT m a -&gt; LoggerT m b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; LoggerT m b -&gt; LoggerT m a
+$c&lt;$ :: forall (m :: * -&gt; *) a b.
+Functor m =&gt;
+a -&gt; LoggerT m b -&gt; LoggerT m a
+fmap :: (a -&gt; b) -&gt; LoggerT m a -&gt; LoggerT m b
+$cfmap :: forall (m :: * -&gt; *) a b.
+Functor m =&gt;
+(a -&gt; b) -&gt; LoggerT m a -&gt; LoggerT m b
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679070885"><span id="local-6989586621679070887"><span id="local-6989586621679070889"><span id="local-6989586621679070891"><span id="local-6989586621679070893"><span class="annot"><span class="annottext">Functor (LoggerT m)
+a -&gt; LoggerT m a
+Functor (LoggerT m)
+-&gt; (forall a. a -&gt; LoggerT m a)
+-&gt; (forall a b. LoggerT m (a -&gt; b) -&gt; LoggerT m a -&gt; LoggerT m b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c) -&gt; LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m c)
+-&gt; (forall a b. LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m b)
+-&gt; (forall a b. LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m a)
+-&gt; Applicative (LoggerT m)
+LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m b
+LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m a
+LoggerT m (a -&gt; b) -&gt; LoggerT m a -&gt; LoggerT m b
+(a -&gt; b -&gt; c) -&gt; LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m c
+forall a. a -&gt; LoggerT m a
+forall a b. LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m a
+forall a b. LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m b
+forall a b. LoggerT m (a -&gt; b) -&gt; LoggerT m a -&gt; LoggerT m b
+forall a b c.
+(a -&gt; b -&gt; c) -&gt; LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m c
+forall (f :: * -&gt; *).
+Functor f
+-&gt; (forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+forall (m :: * -&gt; *). Applicative m =&gt; Functor (LoggerT m)
+forall (m :: * -&gt; *) a. Applicative m =&gt; a -&gt; LoggerT m a
+forall (m :: * -&gt; *) a b.
+Applicative m =&gt;
+LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m a
+forall (m :: * -&gt; *) a b.
+Applicative m =&gt;
+LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m b
+forall (m :: * -&gt; *) a b.
+Applicative m =&gt;
+LoggerT m (a -&gt; b) -&gt; LoggerT m a -&gt; LoggerT m b
+forall (m :: * -&gt; *) a b c.
+Applicative m =&gt;
+(a -&gt; b -&gt; c) -&gt; LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m c
+&lt;* :: LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m a
+$c&lt;* :: forall (m :: * -&gt; *) a b.
+Applicative m =&gt;
+LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m a
+*&gt; :: LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m b
+$c*&gt; :: forall (m :: * -&gt; *) a b.
+Applicative m =&gt;
+LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m c
+$cliftA2 :: forall (m :: * -&gt; *) a b c.
+Applicative m =&gt;
+(a -&gt; b -&gt; c) -&gt; LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m c
+&lt;*&gt; :: LoggerT m (a -&gt; b) -&gt; LoggerT m a -&gt; LoggerT m b
+$c&lt;*&gt; :: forall (m :: * -&gt; *) a b.
+Applicative m =&gt;
+LoggerT m (a -&gt; b) -&gt; LoggerT m a -&gt; LoggerT m b
+pure :: a -&gt; LoggerT m a
+$cpure :: forall (m :: * -&gt; *) a. Applicative m =&gt; a -&gt; LoggerT m a
+$cp1Applicative :: forall (m :: * -&gt; *). Applicative m =&gt; Functor (LoggerT m)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679070878"><span id="local-6989586621679070880"><span id="local-6989586621679070882"><span class="annot"><span class="annottext">Applicative (LoggerT m)
+a -&gt; LoggerT m a
+Applicative (LoggerT m)
+-&gt; (forall a b. LoggerT m a -&gt; (a -&gt; LoggerT m b) -&gt; LoggerT m b)
+-&gt; (forall a b. LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m b)
+-&gt; (forall a. a -&gt; LoggerT m a)
+-&gt; Monad (LoggerT m)
+LoggerT m a -&gt; (a -&gt; LoggerT m b) -&gt; LoggerT m b
+LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m b
+forall a. a -&gt; LoggerT m a
+forall a b. LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m b
+forall a b. LoggerT m a -&gt; (a -&gt; LoggerT m b) -&gt; LoggerT m b
+forall (m :: * -&gt; *). Monad m =&gt; Applicative (LoggerT m)
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; LoggerT m a
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m b
+forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+LoggerT m a -&gt; (a -&gt; LoggerT m b) -&gt; LoggerT m b
+forall (m :: * -&gt; *).
+Applicative m
+-&gt; (forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+return :: a -&gt; LoggerT m a
+$creturn :: forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; LoggerT m a
+&gt;&gt; :: LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m b
+$c&gt;&gt; :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+LoggerT m a -&gt; LoggerT m b -&gt; LoggerT m b
+&gt;&gt;= :: LoggerT m a -&gt; (a -&gt; LoggerT m b) -&gt; LoggerT m b
+$c&gt;&gt;= :: forall (m :: * -&gt; *) a b.
+Monad m =&gt;
+LoggerT m a -&gt; (a -&gt; LoggerT m b) -&gt; LoggerT m b
+$cp1Monad :: forall (m :: * -&gt; *). Monad m =&gt; Applicative (LoggerT m)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679070875"><span class="annot"><span class="annottext">Monad (LoggerT m)
+Monad (LoggerT m)
+-&gt; (forall a. IO a -&gt; LoggerT m a) -&gt; MonadIO (LoggerT m)
+IO a -&gt; LoggerT m a
+forall a. IO a -&gt; LoggerT m a
+forall (m :: * -&gt; *).
+Monad m -&gt; (forall a. IO a -&gt; m a) -&gt; MonadIO m
+forall (m :: * -&gt; *). MonadIO m =&gt; Monad (LoggerT m)
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; LoggerT m a
+liftIO :: IO a -&gt; LoggerT m a
+$cliftIO :: forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; LoggerT m a
+$cp1MonadIO :: forall (m :: * -&gt; *). MonadIO m =&gt; Monad (LoggerT m)
+</span><a href="#local-6989586621679070875"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var">MonadIO</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-138"></span><span>        </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO.Handle</span></span><span> </span><span class="annot"><a href="#local-6989586621679071031"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-139"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679070873"><span class="annot"><span class="annottext">m a -&gt; LoggerT m a
+(forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; LoggerT m a)
+-&gt; MonadTrans LoggerT
+forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; LoggerT m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *).
+(forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; t m a) -&gt; MonadTrans t
+lift :: m a -&gt; LoggerT m a
+$clift :: forall (m :: * -&gt; *) a. Monad m =&gt; m a -&gt; LoggerT m a
+</span><a href="#local-6989586621679070873"><span class="hs-identifier hs-var hs-var hs-var hs-var">MonadTrans</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-140"></span><span>        </span><span class="hs-keyword">via</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO.Handle</span></span><span class="hs-special">)</span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span id="local-6989586621679070872"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679070872"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#MonadLogger"><span class="hs-identifier hs-type">MonadLogger</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Example.html#LoggerT"><span class="hs-identifier hs-type">LoggerT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070872"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-143"></span><span>    </span><span id="local-6989586621679070868"><span class="annot"><span class="annottext">logMessage :: String -&gt; LoggerT m ()
+</span><a href="#local-6989586621679070868"><span class="hs-identifier hs-var hs-var hs-var hs-var">logMessage</span></a></span></span><span> </span><span id="local-6989586621679070867"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679070867"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Handle -&gt; m ()) -&gt; LoggerT m ()
+forall (m :: * -&gt; *) a. (Handle -&gt; m a) -&gt; LoggerT m a
+</span><a href="Control.Reducible.Example.html#LoggerT"><span class="hs-identifier hs-var">LoggerT</span></a></span><span> </span><span class="annot"><span class="annottext">((Handle -&gt; m ()) -&gt; LoggerT m ())
+-&gt; (Handle -&gt; m ()) -&gt; LoggerT m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679070866"><span class="annot"><span class="annottext">Handle
+</span><a href="#local-6989586621679070866"><span class="hs-identifier hs-var">fileHandle</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-144"></span><span>        </span><span class="annot"><span class="annottext">IO () -&gt; m ()
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; m ()) -&gt; IO () -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Handle -&gt; String -&gt; IO ()
+</span><span class="hs-identifier hs-var">IO.hPutStrLn</span></span><span> </span><span class="annot"><span class="annottext">Handle
+</span><a href="#local-6989586621679070866"><span class="hs-identifier hs-var">fileHandle</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679070867"><span class="hs-identifier hs-var">msg</span></a></span></span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span id="local-6989586621679070864"><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Example.html#LoggerT"><span class="hs-identifier hs-type">LoggerT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070864"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-147"></span><span>    </span><span class="hs-keyword">type</span><span> </span><span id="Reduced"><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-var">Reduced</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Example.html#LoggerT"><span class="hs-identifier hs-type">LoggerT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070864"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-148"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">ReaderT</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO.Handle</span></span><span> </span><span class="annot"><a href="#local-6989586621679070864"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-149"></span><span>    </span><span id="local-6989586621679070861"><span class="annot"><span class="annottext">fromReduced :: Reduced (LoggerT m) a -&gt; LoggerT m a
+</span><a href="#local-6989586621679070861"><span class="hs-identifier hs-var hs-var hs-var hs-var">fromReduced</span></a></span></span><span> </span><span id="local-6989586621679070860"><span class="annot"><span class="annottext">Reduced (LoggerT m) a
+</span><a href="#local-6989586621679070860"><span class="hs-identifier hs-var">asReader</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Handle -&gt; m a) -&gt; LoggerT m a
+forall (m :: * -&gt; *) a. (Handle -&gt; m a) -&gt; LoggerT m a
+</span><a href="Control.Reducible.Example.html#LoggerT"><span class="hs-identifier hs-var">LoggerT</span></a></span><span> </span><span class="annot"><span class="annottext">((Handle -&gt; m a) -&gt; LoggerT m a) -&gt; (Handle -&gt; m a) -&gt; LoggerT m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679070859"><span class="annot"><span class="annottext">Handle
+</span><a href="#local-6989586621679070859"><span class="hs-identifier hs-var">fileHandle</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-150"></span><span>        </span><span class="annot"><span class="annottext">ReaderT Handle m a -&gt; Handle -&gt; m a
+forall r (m :: * -&gt; *) a. ReaderT r m a -&gt; r -&gt; m a
+</span><span class="hs-identifier hs-var hs-var">runReaderT</span></span><span> </span><span class="annot"><span class="annottext">ReaderT Handle m a
+Reduced (LoggerT m) a
+</span><a href="#local-6989586621679070860"><span class="hs-identifier hs-var">asReader</span></a></span><span> </span><span class="annot"><span class="annottext">Handle
+</span><a href="#local-6989586621679070859"><span class="hs-identifier hs-var">fileHandle</span></a></span><span>
+</span><span id="line-151"></span><span>    </span><span id="local-6989586621679070858"><span class="annot"><span class="annottext">toReduced :: LoggerT m a -&gt; Reduced (LoggerT m) a
+</span><a href="#local-6989586621679070858"><span class="hs-identifier hs-var hs-var hs-var hs-var">toReduced</span></a></span></span><span> </span><span id="local-6989586621679070857"><span class="annot"><span class="annottext">LoggerT m a
+</span><a href="#local-6989586621679070857"><span class="hs-identifier hs-var">asLogger</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Handle -&gt; m a) -&gt; ReaderT Handle m a
+forall r (m :: * -&gt; *) a. (r -&gt; m a) -&gt; ReaderT r m a
+</span><span class="hs-identifier hs-var">ReaderT</span></span><span> </span><span class="annot"><span class="annottext">((Handle -&gt; m a) -&gt; ReaderT Handle m a)
+-&gt; (Handle -&gt; m a) -&gt; ReaderT Handle m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679070856"><span class="annot"><span class="annottext">Handle
+</span><a href="#local-6989586621679070856"><span class="hs-identifier hs-var">fileHandle</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-152"></span><span>        </span><span class="annot"><span class="annottext">LoggerT m a -&gt; Handle -&gt; m a
+forall (m :: * -&gt; *) a. LoggerT m a -&gt; Handle -&gt; m a
+</span><a href="Control.Reducible.Example.html#runLoggerT"><span class="hs-identifier hs-var hs-var">runLoggerT</span></a></span><span> </span><span class="annot"><span class="annottext">LoggerT m a
+</span><a href="#local-6989586621679070857"><span class="hs-identifier hs-var">asLogger</span></a></span><span> </span><span class="annot"><span class="annottext">Handle
+</span><a href="#local-6989586621679070856"><span class="hs-identifier hs-var">fileHandle</span></a></span></span><span>
+</span><span id="line-153"></span><span>
+</span><span id="line-154"></span><span id="local-6989586621679070854"><span id="local-6989586621679070855"><span class="hs-keyword">instance</span><span>
+</span><span id="line-155"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Lifting.html#MonadLifting"><span class="hs-identifier hs-type">MonadLifting</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070855"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070854"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679070855"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#MonadLogger"><span class="hs-identifier hs-type">MonadLogger</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070854"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-156"></span><span>    </span><span class="annot"><a href="Control.Reducible.Example.html#MonadLogger"><span class="hs-identifier hs-type">MonadLogger</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Lifting.html#Lifting"><span class="hs-identifier hs-type">Lifting</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070855"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070854"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-157"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-158"></span><span>    </span><span id="local-6989586621679070851"><span class="annot"><span class="annottext">logMessage :: String -&gt; Lifting m n ()
+</span><a href="#local-6989586621679070851"><span class="hs-identifier hs-var hs-var hs-var hs-var">logMessage</span></a></span></span><span> </span><span id="local-6989586621679070850"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679070850"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">n () -&gt; Lifting m n ()
+forall (m :: * -&gt; *) (n :: * -&gt; *) a.
+MonadLifting m n =&gt;
+n a -&gt; Lifting m n a
+</span><a href="Control.Reducible.Lifting.html#applyLifting"><span class="hs-identifier hs-var">applyLifting</span></a></span><span> </span><span class="annot"><span class="annottext">(n () -&gt; Lifting m n ()) -&gt; n () -&gt; Lifting m n ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; n ()
+forall (m :: * -&gt; *). MonadLogger m =&gt; String -&gt; m ()
+</span><a href="Control.Reducible.Example.html#logMessage"><span class="hs-identifier hs-var">logMessage</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679070850"><span class="hs-identifier hs-var">msg</span></a></span></span></span><span>
+</span><span id="line-159"></span><span>
+</span><span id="line-160"></span><span id="local-6989586621679070848"><span class="hs-keyword">instance</span><span>
+</span><span id="line-161"></span><span>    </span><span class="hs-pragma">{-# OVERLAPPABLE</span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-162"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reducible"><span class="hs-identifier hs-type">Reducible</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070848"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679070848"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#MonadLogger"><span class="hs-identifier hs-type">MonadLogger</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.html#Reduced"><span class="hs-identifier hs-type">Reduced</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070848"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-163"></span><span>    </span><span class="annot"><a href="Control.Reducible.Example.html#MonadLogger"><span class="hs-identifier hs-type">MonadLogger</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070848"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-164"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-165"></span><span>    </span><span id="local-6989586621679070845"><span class="annot"><span class="annottext">logMessage :: String -&gt; m ()
+</span><a href="#local-6989586621679070845"><span class="hs-identifier hs-var hs-var hs-var hs-var">logMessage</span></a></span></span><span> </span><span id="local-6989586621679070844"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679070844"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Reduced m () -&gt; m ()
+forall (m :: * -&gt; *) a. Reducible m =&gt; Reduced m a -&gt; m a
+</span><a href="Control.Reducible.html#fromReduced"><span class="hs-identifier hs-var">fromReduced</span></a></span><span> </span><span class="annot"><span class="annottext">(Reduced m () -&gt; m ()) -&gt; Reduced m () -&gt; m ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Reduced m ()
+forall (m :: * -&gt; *). MonadLogger m =&gt; String -&gt; m ()
+</span><a href="Control.Reducible.Example.html#logMessage"><span class="hs-identifier hs-var">logMessage</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679070844"><span class="hs-identifier hs-var">msg</span></a></span></span><span>
+</span><span id="line-166"></span><span>
+</span><span id="line-167"></span><span class="annot"><a href="Control.Reducible.Example.html#sayHello"><span class="hs-identifier hs-type">sayHello</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-168"></span><span>    </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679070842"><span class="annot"><a href="#local-6989586621679070842"><span class="hs-identifier hs-type">mbase</span></a></span></span><span class="hs-operator">.</span><span>
+</span><span id="line-169"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Example.html#MonadLogger"><span class="hs-identifier hs-type">MonadLogger</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070842"><span class="hs-identifier hs-type">mbase</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-170"></span><span>    </span><span class="annot"><a href="Control.Reducible.Example.html#DatabaseT"><span class="hs-identifier hs-type">DatabaseT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">WriterT</span></span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070842"><span class="hs-identifier hs-type">mbase</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-171"></span><span id="sayHello"><span class="annot"><span class="annottext">sayHello :: DatabaseT (WriterT String mbase) ()
+</span><a href="Control.Reducible.Example.html#sayHello"><span class="hs-identifier hs-var hs-var">sayHello</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-172"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; DatabaseT (WriterT String mbase) ()
+forall (m :: * -&gt; *). MonadLogger m =&gt; String -&gt; m ()
+</span><a href="Control.Reducible.Example.html#logMessage"><span class="hs-identifier hs-var">logMessage</span></a></span><span>
+</span><span id="line-173"></span><span>        </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Example.html#DatabaseT"><span class="hs-identifier hs-type">DatabaseT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">WriterT</span></span><span> </span><span class="annot"><a href="Control.Reducible.Example.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070842"><span class="hs-identifier hs-type">mbase</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-174"></span><span>        </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Hello&quot;</span></span><span>
+</span><span id="line-175"></span></pre></body></html>

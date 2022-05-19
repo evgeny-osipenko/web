@@ -1,0 +1,294 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DerivingStrategies #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE KindSignatures #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE MultiParamTypeClasses #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Reducible.Lifting</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-9"></span><span>      </span><span class="annot"><a href="Control.Reducible.Lifting.html#applyLifting"><span class="hs-identifier">applyLifting</span></a></span><span>
+</span><span id="line-10"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Reducible.Lifting.html#Lifting"><span class="hs-identifier">Lifting</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Reducible.Lifting.html#MonadLifting"><span class="hs-identifier">MonadLifting</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Trans.Class</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Kind</span></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Catch</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Catch</span></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.State.Class</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">State</span></span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-comment">{-| A wrapper for decomposing monad transformer applications.
+
+    @`Lifting` m n@ can be seen as an application of an opaque monad
+    transformer @`Lifting` m@ to a monad @n@.
+
+    Normally, you wouldn't use `Lifting` in you business code. When
+    generalizing a monad with t`Control.Reducible.Reducible`, @`Lifting` m n@
+    is used as the the most general representation. -}</span><span>
+</span><span id="line-28"></span><span class="hs-keyword">newtype</span><span> </span><span id="Lifting"><span class="annot"><a href="Control.Reducible.Lifting.html#Lifting"><span class="hs-identifier hs-var">Lifting</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679070422"><span class="annot"><a href="#local-6989586621679070422"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679070420"><span class="annot"><a href="#local-6989586621679070420"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Type</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679070421"><span class="annot"><a href="#local-6989586621679070421"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-29"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="Lifting"><span class="annot"><a href="Control.Reducible.Lifting.html#Lifting"><span class="hs-identifier hs-var">Lifting</span></a></span></span><span>
+</span><span id="line-30"></span><span>        </span><span class="hs-special">{</span><span> </span><span id="unwrapLifting"><span class="annot"><span class="annottext">Lifting m n a -&gt; m a
+</span><a href="Control.Reducible.Lifting.html#unwrapLifting"><span class="hs-identifier hs-var hs-var">unwrapLifting</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679070422"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070421"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-31"></span><span>        </span><span class="hs-special">}</span><span>
+</span><span id="line-32"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">newtype</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679070384"><span id="local-6989586621679070386"><span class="annot"><span class="annottext">a -&gt; Lifting m n b -&gt; Lifting m n a
+(a -&gt; b) -&gt; Lifting m n a -&gt; Lifting m n b
+(forall a b. (a -&gt; b) -&gt; Lifting m n a -&gt; Lifting m n b)
+-&gt; (forall a b. a -&gt; Lifting m n b -&gt; Lifting m n a)
+-&gt; Functor (Lifting m n)
+forall a b. a -&gt; Lifting m n b -&gt; Lifting m n a
+forall a b. (a -&gt; b) -&gt; Lifting m n a -&gt; Lifting m n b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Functor m =&gt;
+a -&gt; Lifting m n b -&gt; Lifting m n a
+forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Functor m =&gt;
+(a -&gt; b) -&gt; Lifting m n a -&gt; Lifting m n b
+&lt;$ :: a -&gt; Lifting m n b -&gt; Lifting m n a
+$c&lt;$ :: forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Functor m =&gt;
+a -&gt; Lifting m n b -&gt; Lifting m n a
+fmap :: (a -&gt; b) -&gt; Lifting m n a -&gt; Lifting m n b
+$cfmap :: forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Functor m =&gt;
+(a -&gt; b) -&gt; Lifting m n a -&gt; Lifting m n b
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679070372"><span id="local-6989586621679070374"><span id="local-6989586621679070376"><span id="local-6989586621679070378"><span id="local-6989586621679070380"><span class="annot"><span class="annottext">Functor (Lifting m n)
+a -&gt; Lifting m n a
+Functor (Lifting m n)
+-&gt; (forall a. a -&gt; Lifting m n a)
+-&gt; (forall a b.
+    Lifting m n (a -&gt; b) -&gt; Lifting m n a -&gt; Lifting m n b)
+-&gt; (forall a b c.
+    (a -&gt; b -&gt; c) -&gt; Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n c)
+-&gt; (forall a b. Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n b)
+-&gt; (forall a b. Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n a)
+-&gt; Applicative (Lifting m n)
+Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n b
+Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n a
+Lifting m n (a -&gt; b) -&gt; Lifting m n a -&gt; Lifting m n b
+(a -&gt; b -&gt; c) -&gt; Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n c
+forall a. a -&gt; Lifting m n a
+forall a b. Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n a
+forall a b. Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n b
+forall a b. Lifting m n (a -&gt; b) -&gt; Lifting m n a -&gt; Lifting m n b
+forall a b c.
+(a -&gt; b -&gt; c) -&gt; Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n c
+forall (f :: * -&gt; *).
+Functor f
+-&gt; (forall a. a -&gt; f a)
+-&gt; (forall a b. f (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b c. (a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c)
+-&gt; (forall a b. f a -&gt; f b -&gt; f b)
+-&gt; (forall a b. f a -&gt; f b -&gt; f a)
+-&gt; Applicative f
+forall (m :: * -&gt; *) (n :: * -&gt; *).
+Applicative m =&gt;
+Functor (Lifting m n)
+forall (m :: * -&gt; *) (n :: * -&gt; *) a.
+Applicative m =&gt;
+a -&gt; Lifting m n a
+forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Applicative m =&gt;
+Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n a
+forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Applicative m =&gt;
+Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n b
+forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Applicative m =&gt;
+Lifting m n (a -&gt; b) -&gt; Lifting m n a -&gt; Lifting m n b
+forall (m :: * -&gt; *) (n :: * -&gt; *) a b c.
+Applicative m =&gt;
+(a -&gt; b -&gt; c) -&gt; Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n c
+&lt;* :: Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n a
+$c&lt;* :: forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Applicative m =&gt;
+Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n a
+*&gt; :: Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n b
+$c*&gt; :: forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Applicative m =&gt;
+Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n b
+liftA2 :: (a -&gt; b -&gt; c) -&gt; Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n c
+$cliftA2 :: forall (m :: * -&gt; *) (n :: * -&gt; *) a b c.
+Applicative m =&gt;
+(a -&gt; b -&gt; c) -&gt; Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n c
+&lt;*&gt; :: Lifting m n (a -&gt; b) -&gt; Lifting m n a -&gt; Lifting m n b
+$c&lt;*&gt; :: forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Applicative m =&gt;
+Lifting m n (a -&gt; b) -&gt; Lifting m n a -&gt; Lifting m n b
+pure :: a -&gt; Lifting m n a
+$cpure :: forall (m :: * -&gt; *) (n :: * -&gt; *) a.
+Applicative m =&gt;
+a -&gt; Lifting m n a
+$cp1Applicative :: forall (m :: * -&gt; *) (n :: * -&gt; *).
+Applicative m =&gt;
+Functor (Lifting m n)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Applicative</span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679070364"><span id="local-6989586621679070366"><span id="local-6989586621679070368"><span class="annot"><span class="annottext">Applicative (Lifting m n)
+a -&gt; Lifting m n a
+Applicative (Lifting m n)
+-&gt; (forall a b.
+    Lifting m n a -&gt; (a -&gt; Lifting m n b) -&gt; Lifting m n b)
+-&gt; (forall a b. Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n b)
+-&gt; (forall a. a -&gt; Lifting m n a)
+-&gt; Monad (Lifting m n)
+Lifting m n a -&gt; (a -&gt; Lifting m n b) -&gt; Lifting m n b
+Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n b
+forall a. a -&gt; Lifting m n a
+forall a b. Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n b
+forall a b. Lifting m n a -&gt; (a -&gt; Lifting m n b) -&gt; Lifting m n b
+forall (m :: * -&gt; *).
+Applicative m
+-&gt; (forall a b. m a -&gt; (a -&gt; m b) -&gt; m b)
+-&gt; (forall a b. m a -&gt; m b -&gt; m b)
+-&gt; (forall a. a -&gt; m a)
+-&gt; Monad m
+forall (m :: * -&gt; *) (n :: * -&gt; *).
+Monad m =&gt;
+Applicative (Lifting m n)
+forall (m :: * -&gt; *) (n :: * -&gt; *) a. Monad m =&gt; a -&gt; Lifting m n a
+forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Monad m =&gt;
+Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n b
+forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Monad m =&gt;
+Lifting m n a -&gt; (a -&gt; Lifting m n b) -&gt; Lifting m n b
+return :: a -&gt; Lifting m n a
+$creturn :: forall (m :: * -&gt; *) (n :: * -&gt; *) a. Monad m =&gt; a -&gt; Lifting m n a
+&gt;&gt; :: Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n b
+$c&gt;&gt; :: forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Monad m =&gt;
+Lifting m n a -&gt; Lifting m n b -&gt; Lifting m n b
+&gt;&gt;= :: Lifting m n a -&gt; (a -&gt; Lifting m n b) -&gt; Lifting m n b
+$c&gt;&gt;= :: forall (m :: * -&gt; *) (n :: * -&gt; *) a b.
+Monad m =&gt;
+Lifting m n a -&gt; (a -&gt; Lifting m n b) -&gt; Lifting m n b
+$cp1Monad :: forall (m :: * -&gt; *) (n :: * -&gt; *).
+Monad m =&gt;
+Applicative (Lifting m n)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monad</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-comment">{-| Lifting of actions in monad @n@ into @m@,
+
+    Whereas `MonadTrans` provides lifting by exactly one transformer layer at
+    a time, `MonadLifting` can lift by an arbitrary distance at once. -}</span><span>
+</span><span id="line-38"></span><span class="hs-keyword">class</span><span> </span><span id="MonadLifting"><span class="annot"><a href="Control.Reducible.Lifting.html#MonadLifting"><span class="hs-identifier hs-var">MonadLifting</span></a></span></span><span> </span><span id="local-6989586621679070439"><span class="annot"><a href="#local-6989586621679070439"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span id="local-6989586621679070440"><span class="annot"><a href="#local-6989586621679070440"><span class="hs-identifier hs-type">n</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-39"></span><span>    </span><span id="local-6989586621679070442"><span id="liftLong"><span class="annot"><a href="Control.Reducible.Lifting.html#liftLong"><span class="hs-identifier hs-type">liftLong</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679070440"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070442"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679070439"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070442"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span id="local-6989586621679070361"><span class="hs-keyword">instance</span><span> </span><span class="hs-pragma">{-# INCOHERENT</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span class="annot"><a href="Control.Reducible.Lifting.html#MonadLifting"><span class="hs-identifier hs-type">MonadLifting</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070361"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070361"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-42"></span><span>    </span><span id="local-6989586621679070358"><span class="annot"><span class="annottext">liftLong :: m a -&gt; m a
+</span><a href="#local-6989586621679070358"><span class="hs-identifier hs-var hs-var hs-var hs-var">liftLong</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">m a -&gt; m a
+forall a. a -&gt; a
+</span><span class="hs-identifier hs-var">id</span></span></span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span id="local-6989586621679070354"><span id="local-6989586621679070355"><span id="local-6989586621679070356"><span class="hs-keyword">instance</span><span>
+</span><span id="line-45"></span><span>    </span><span class="hs-pragma">{-# INCOHERENT</span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-46"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadTrans</span></span><span> </span><span class="annot"><a href="#local-6989586621679070356"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Reducible.Lifting.html#MonadLifting"><span class="hs-identifier hs-type">MonadLifting</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070355"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070354"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679070355"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-47"></span><span>    </span><span class="annot"><a href="Control.Reducible.Lifting.html#MonadLifting"><span class="hs-identifier hs-type">MonadLifting</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679070356"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070355"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679070354"><span class="hs-identifier hs-type">n</span></a></span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-49"></span><span>    </span><span id="local-6989586621679070352"><span class="annot"><span class="annottext">liftLong :: n a -&gt; t m a
+</span><a href="#local-6989586621679070352"><span class="hs-identifier hs-var hs-var hs-var hs-var">liftLong</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">m a -&gt; t m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+(MonadTrans t, Monad m) =&gt;
+m a -&gt; t m a
+</span><span class="hs-identifier hs-var">lift</span></span><span> </span><span class="annot"><span class="annottext">(m a -&gt; t m a) -&gt; (n a -&gt; m a) -&gt; n a -&gt; t m a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">n a -&gt; m a
+forall (m :: * -&gt; *) (n :: * -&gt; *) a.
+MonadLifting m n =&gt;
+n a -&gt; m a
+</span><a href="Control.Reducible.Lifting.html#liftLong"><span class="hs-identifier hs-var">liftLong</span></a></span></span></span></span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="hs-comment">{-| This function plays the role of `lift` for @`Lifting` m@.
+
+    The reason we don't use `lift` proper is that the exact implementation
+    depends on both parameters @m@ and @n@, but the kind of `MonadTrans`
+    does not allow us that choice. -}</span><span>
+</span><span id="line-56"></span><span id="local-6989586621679070411"><span id="local-6989586621679070412"><span id="local-6989586621679070413"><span class="annot"><a href="Control.Reducible.Lifting.html#applyLifting"><span class="hs-identifier hs-type">applyLifting</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Reducible.Lifting.html#MonadLifting"><span class="hs-identifier hs-type">MonadLifting</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070413"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070412"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679070412"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070411"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Control.Reducible.Lifting.html#Lifting"><span class="hs-identifier hs-type">Lifting</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070413"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070412"><span class="hs-identifier hs-type">n</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070411"><span class="hs-identifier hs-type">a</span></a></span></span></span></span><span>
+</span><span id="line-57"></span><span id="applyLifting"><span class="annot"><span class="annottext">applyLifting :: n a -&gt; Lifting m n a
+</span><a href="Control.Reducible.Lifting.html#applyLifting"><span class="hs-identifier hs-var hs-var">applyLifting</span></a></span></span><span> </span><span id="local-6989586621679070349"><span class="annot"><span class="annottext">n a
+</span><a href="#local-6989586621679070349"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">m a -&gt; Lifting m n a
+forall (m :: * -&gt; *) (n :: * -&gt; *) a. m a -&gt; Lifting m n a
+</span><a href="Control.Reducible.Lifting.html#Lifting"><span class="hs-identifier hs-var">Lifting</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">n a -&gt; m a
+forall (m :: * -&gt; *) (n :: * -&gt; *) a.
+MonadLifting m n =&gt;
+n a -&gt; m a
+</span><a href="Control.Reducible.Lifting.html#liftLong"><span class="hs-identifier hs-var">liftLong</span></a></span><span> </span><span class="annot"><span class="annottext">n a
+</span><a href="#local-6989586621679070349"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span id="local-6989586621679070347"><span id="local-6989586621679070348"><span class="hs-keyword">instance</span><span>
+</span><span id="line-60"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Lifting.html#MonadLifting"><span class="hs-identifier hs-type">MonadLifting</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070348"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070347"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679070348"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadFail</span></span><span> </span><span class="annot"><a href="#local-6989586621679070347"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">MonadFail</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Lifting.html#Lifting"><span class="hs-identifier hs-type">Lifting</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070348"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070347"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-63"></span><span>    </span><span id="local-6989586621679070343"><span class="annot"><span class="annottext">fail :: String -&gt; Lifting m n a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">fail</span></span></span><span> </span><span id="local-6989586621679070342"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679070342"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-64"></span><span>        </span><span class="annot"><span class="annottext">n a -&gt; Lifting m n a
+forall (m :: * -&gt; *) (n :: * -&gt; *) a.
+MonadLifting m n =&gt;
+n a -&gt; Lifting m n a
+</span><a href="Control.Reducible.Lifting.html#applyLifting"><span class="hs-identifier hs-var">applyLifting</span></a></span><span> </span><span class="annot"><span class="annottext">(n a -&gt; Lifting m n a) -&gt; n a -&gt; Lifting m n a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; n a
+forall (m :: * -&gt; *) a. MonadFail m =&gt; String -&gt; m a
+</span><span class="hs-identifier hs-var">fail</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679070342"><span class="hs-identifier hs-var">msg</span></a></span></span></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span id="local-6989586621679070340"><span id="local-6989586621679070341"><span class="hs-keyword">instance</span><span>
+</span><span id="line-67"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Lifting.html#MonadLifting"><span class="hs-identifier hs-type">MonadLifting</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070341"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070340"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679070341"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadThrow</span></span><span> </span><span class="annot"><a href="#local-6989586621679070340"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-68"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Catch.MonadThrow</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Lifting.html#Lifting"><span class="hs-identifier hs-type">Lifting</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070341"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070340"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-70"></span><span>    </span><span id="local-6989586621679070336"><span class="annot"><span class="annottext">throwM :: e -&gt; Lifting m n a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">throwM</span></span></span><span> </span><span id="local-6989586621679070334"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679070334"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-71"></span><span>        </span><span class="annot"><span class="annottext">n a -&gt; Lifting m n a
+forall (m :: * -&gt; *) (n :: * -&gt; *) a.
+MonadLifting m n =&gt;
+n a -&gt; Lifting m n a
+</span><a href="Control.Reducible.Lifting.html#applyLifting"><span class="hs-identifier hs-var">applyLifting</span></a></span><span> </span><span class="annot"><span class="annottext">(n a -&gt; Lifting m n a) -&gt; n a -&gt; Lifting m n a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">e -&gt; n a
+forall (m :: * -&gt; *) e a. (MonadThrow m, Exception e) =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">Catch.throwM</span></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679070334"><span class="hs-identifier hs-var">e</span></a></span></span></span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span id="local-6989586621679070331"><span id="local-6989586621679070332"><span id="local-6989586621679070333"><span class="hs-keyword">instance</span><span>
+</span><span id="line-74"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Lifting.html#MonadLifting"><span class="hs-identifier hs-type">MonadLifting</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070333"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070332"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679070333"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">State.MonadState</span></span><span> </span><span class="annot"><a href="#local-6989586621679070331"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070332"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-75"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">State.MonadState</span></span><span> </span><span class="annot"><a href="#local-6989586621679070331"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Reducible.Lifting.html#Lifting"><span class="hs-identifier hs-type">Lifting</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070333"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679070332"><span class="hs-identifier hs-type">n</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-77"></span><span>    </span><span id="local-6989586621679070325"><span class="annot"><span class="annottext">get :: Lifting m n s
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">get</span></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-78"></span><span>        </span><span class="annot"><span class="annottext">n s -&gt; Lifting m n s
+forall (m :: * -&gt; *) (n :: * -&gt; *) a.
+MonadLifting m n =&gt;
+n a -&gt; Lifting m n a
+</span><a href="Control.Reducible.Lifting.html#applyLifting"><span class="hs-identifier hs-var">applyLifting</span></a></span><span> </span><span class="annot"><span class="annottext">n s
+forall s (m :: * -&gt; *). MonadState s m =&gt; m s
+</span><span class="hs-identifier hs-var">State.get</span></span><span>
+</span><span id="line-79"></span><span>    </span><span id="local-6989586621679070323"><span class="annot"><span class="annottext">put :: s -&gt; Lifting m n ()
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">put</span></span></span><span> </span><span id="local-6989586621679070321"><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679070321"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-80"></span><span>        </span><span class="annot"><span class="annottext">n () -&gt; Lifting m n ()
+forall (m :: * -&gt; *) (n :: * -&gt; *) a.
+MonadLifting m n =&gt;
+n a -&gt; Lifting m n a
+</span><a href="Control.Reducible.Lifting.html#applyLifting"><span class="hs-identifier hs-var">applyLifting</span></a></span><span> </span><span class="annot"><span class="annottext">(n () -&gt; Lifting m n ()) -&gt; n () -&gt; Lifting m n ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">s -&gt; n ()
+forall s (m :: * -&gt; *). MonadState s m =&gt; s -&gt; m ()
+</span><span class="hs-identifier hs-var">State.put</span></span><span> </span><span class="annot"><span class="annottext">s
+</span><a href="#local-6989586621679070321"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-81"></span><span>    </span><span id="local-6989586621679070320"><span class="annot"><span class="annottext">state :: (s -&gt; (a, s)) -&gt; Lifting m n a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">state</span></span></span><span> </span><span id="local-6989586621679070318"><span class="annot"><span class="annottext">s -&gt; (a, s)
+</span><a href="#local-6989586621679070318"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-82"></span><span>        </span><span class="annot"><span class="annottext">n a -&gt; Lifting m n a
+forall (m :: * -&gt; *) (n :: * -&gt; *) a.
+MonadLifting m n =&gt;
+n a -&gt; Lifting m n a
+</span><a href="Control.Reducible.Lifting.html#applyLifting"><span class="hs-identifier hs-var">applyLifting</span></a></span><span> </span><span class="annot"><span class="annottext">(n a -&gt; Lifting m n a) -&gt; n a -&gt; Lifting m n a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(s -&gt; (a, s)) -&gt; n a
+forall s (m :: * -&gt; *) a. MonadState s m =&gt; (s -&gt; (a, s)) -&gt; m a
+</span><span class="hs-identifier hs-var">State.state</span></span><span> </span><span class="annot"><span class="annottext">s -&gt; (a, s)
+</span><a href="#local-6989586621679070318"><span class="hs-identifier hs-var">f</span></a></span></span></span></span><span>
+</span><span id="line-83"></span></pre></body></html>

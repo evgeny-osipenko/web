@@ -1,0 +1,407 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Reducible.Internal.TH</span><span>
+</span><span id="line-2"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Control.Reducible.Internal.TH.html#chooseInstanceIfMatchingRepr"><span class="hs-identifier">chooseInstanceIfMatchingRepr</span></a></span><span>
+</span><span id="line-3"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-4"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Language.Haskell.TH</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Trans.State.Strict</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">State</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-10"></span><span>
+</span><span id="line-11"></span><span id="local-6989586621679070308"><span id="local-6989586621679070309"><span id="local-6989586621679070311"><span class="annot"><a href="Control.Reducible.Internal.TH.html#zipWithStrict_"><span class="hs-identifier hs-type">zipWithStrict_</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-12"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadPlus</span></span><span> </span><span class="annot"><a href="#local-6989586621679070311"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-13"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679070309"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679070308"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679070311"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-14"></span><span>    </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679070309"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-15"></span><span>    </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679070308"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="#local-6989586621679070311"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-17"></span><span id="zipWithStrict_"><span class="annot"><span class="annottext">zipWithStrict_ :: (a -&gt; b -&gt; m ()) -&gt; [a] -&gt; [b] -&gt; m ()
+</span><a href="Control.Reducible.Internal.TH.html#zipWithStrict_"><span class="hs-identifier hs-var hs-var">zipWithStrict_</span></a></span></span><span> </span><span id="local-6989586621679070253"><span class="annot"><span class="annottext">a -&gt; b -&gt; m ()
+</span><a href="#local-6989586621679070253"><span class="hs-identifier hs-var">fn</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679070252"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070252"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679070251"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679070251"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679070250"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679070250"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679070249"><span class="annot"><span class="annottext">[b]
+</span><a href="#local-6989586621679070249"><span class="hs-identifier hs-var">ys</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><span class="annottext">a -&gt; b -&gt; m ()
+</span><a href="#local-6989586621679070253"><span class="hs-identifier hs-var">fn</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070252"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679070250"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">m () -&gt; m () -&gt; m ()
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; m b -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; b -&gt; m ()) -&gt; [a] -&gt; [b] -&gt; m ()
+forall (m :: * -&gt; *) a b.
+MonadPlus m =&gt;
+(a -&gt; b -&gt; m ()) -&gt; [a] -&gt; [b] -&gt; m ()
+</span><a href="Control.Reducible.Internal.TH.html#zipWithStrict_"><span class="hs-identifier hs-var">zipWithStrict_</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; b -&gt; m ()
+</span><a href="#local-6989586621679070253"><span class="hs-identifier hs-var">fn</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679070251"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">[b]
+</span><a href="#local-6989586621679070249"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-19"></span><span class="annot"><a href="Control.Reducible.Internal.TH.html#zipWithStrict_"><span class="hs-identifier hs-var">zipWithStrict_</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; b -&gt; m ()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><span class="annottext">() -&gt; m ()
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span class="annot"><a href="Control.Reducible.Internal.TH.html#zipWithStrict_"><span class="hs-identifier hs-var">zipWithStrict_</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; b -&gt; m ()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">[b]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="annottext">m ()
+forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a
+</span><span class="hs-identifier hs-var">mzero</span></span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="annot"><a href="Control.Reducible.Internal.TH.html#isMatchingRepr"><span class="hs-identifier hs-type">isMatchingRepr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Info</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Info</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-25"></span><span id="isMatchingRepr"><span class="annot"><span class="annottext">isMatchingRepr :: Info -&gt; Info -&gt; Bool
+</span><a href="Control.Reducible.Internal.TH.html#isMatchingRepr"><span class="hs-identifier hs-var hs-var">isMatchingRepr</span></a></span></span><span> </span><span id="local-6989586621679070246"><span class="annot"><span class="annottext">Info
+</span><a href="#local-6989586621679070246"><span class="hs-identifier hs-var">infoA</span></a></span></span><span> </span><span id="local-6989586621679070245"><span class="annot"><span class="annottext">Info
+</span><a href="#local-6989586621679070245"><span class="hs-identifier hs-var">infoB</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-26"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">StateT (Map Name Name) Maybe ()
+-&gt; Map Name Name -&gt; Maybe ((), Map Name Name)
+forall s (m :: * -&gt; *) a. StateT s m a -&gt; s -&gt; m (a, s)
+</span><span class="hs-identifier hs-var hs-var">State.runStateT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Info -&gt; Info -&gt; StateT (Map Name Name) Maybe ()
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+Info -&gt; Info -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070243"><span class="hs-identifier hs-var">goInfo</span></a></span><span> </span><span class="annot"><span class="annottext">Info
+</span><a href="#local-6989586621679070246"><span class="hs-identifier hs-var">infoA</span></a></span><span> </span><span class="annot"><span class="annottext">Info
+</span><a href="#local-6989586621679070245"><span class="hs-identifier hs-var">infoB</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map Name Name
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-27"></span><span>        </span><span class="annot"><span class="annottext">Maybe ((), Map Name Name)
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-28"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Map Name Name
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-30"></span><span>    </span><span id="local-6989586621679070243"><span class="annot"><span class="annottext">goInfo :: Info -&gt; Info -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070243"><span class="hs-identifier hs-var hs-var">goInfo</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">TyConI</span></span><span> </span><span id="local-6989586621679070240"><span class="annot"><span class="annottext">Dec
+</span><a href="#local-6989586621679070240"><span class="hs-identifier hs-var">declA</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">TyConI</span></span><span> </span><span id="local-6989586621679070239"><span class="annot"><span class="annottext">Dec
+</span><a href="#local-6989586621679070239"><span class="hs-identifier hs-var">declB</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-31"></span><span>        </span><span class="annot"><span class="annottext">Dec -&gt; Dec -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+Dec -&gt; Dec -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070238"><span class="hs-identifier hs-var">goDecl</span></a></span><span> </span><span class="annot"><span class="annottext">Dec
+</span><a href="#local-6989586621679070240"><span class="hs-identifier hs-var">declA</span></a></span><span> </span><span class="annot"><span class="annottext">Dec
+</span><a href="#local-6989586621679070239"><span class="hs-identifier hs-var">declB</span></a></span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="#local-6989586621679070243"><span class="hs-identifier hs-var">goInfo</span></a></span><span> </span><span class="annot"><span class="annottext">Info
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Info
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-33"></span><span>        </span><span class="annot"><span class="annottext">StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a
+</span><span class="hs-identifier hs-var">mzero</span></span><span>
+</span><span id="line-34"></span><span>    </span><span id="local-6989586621679070238"><span class="annot"><span class="annottext">goDecl :: Dec -&gt; Dec -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070238"><span class="hs-identifier hs-var hs-var">goDecl</span></a></span></span><span>
+</span><span id="line-35"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NewtypeD</span></span><span> </span><span class="annot"><span class="annottext">Cxt
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679070236"><span class="annot"><span class="annottext">[TyVarBndr]
+</span><a href="#local-6989586621679070236"><span class="hs-identifier hs-var">paramsA</span></a></span></span><span> </span><span class="annot"><span class="annottext">Maybe Kind
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679070235"><span class="annot"><span class="annottext">Con
+</span><a href="#local-6989586621679070235"><span class="hs-identifier hs-var">conA</span></a></span></span><span> </span><span class="annot"><span class="annottext">[DerivClause]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NewtypeD</span></span><span> </span><span class="annot"><span class="annottext">Cxt
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679070234"><span class="annot"><span class="annottext">[TyVarBndr]
+</span><a href="#local-6989586621679070234"><span class="hs-identifier hs-var">paramsB</span></a></span></span><span> </span><span class="annot"><span class="annottext">Maybe Kind
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679070233"><span class="annot"><span class="annottext">Con
+</span><a href="#local-6989586621679070233"><span class="hs-identifier hs-var">conB</span></a></span></span><span> </span><span class="annot"><span class="annottext">[DerivClause]
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>      </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-38"></span><span>        </span><span class="annot"><span class="annottext">(TyVarBndr -&gt; TyVarBndr -&gt; StateT (Map Name Name) m ())
+-&gt; [TyVarBndr] -&gt; [TyVarBndr] -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a b.
+MonadPlus m =&gt;
+(a -&gt; b -&gt; m ()) -&gt; [a] -&gt; [b] -&gt; m ()
+</span><a href="Control.Reducible.Internal.TH.html#zipWithStrict_"><span class="hs-identifier hs-var">zipWithStrict_</span></a></span><span> </span><span class="annot"><span class="annottext">TyVarBndr -&gt; TyVarBndr -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+TyVarBndr -&gt; TyVarBndr -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070232"><span class="hs-identifier hs-var">goParam</span></a></span><span> </span><span class="annot"><span class="annottext">[TyVarBndr]
+</span><a href="#local-6989586621679070236"><span class="hs-identifier hs-var">paramsA</span></a></span><span> </span><span class="annot"><span class="annottext">[TyVarBndr]
+</span><a href="#local-6989586621679070234"><span class="hs-identifier hs-var">paramsB</span></a></span><span>
+</span><span id="line-39"></span><span>        </span><span class="annot"><span class="annottext">Con -&gt; Con -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+Con -&gt; Con -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070231"><span class="hs-identifier hs-var">goCon</span></a></span><span> </span><span class="annot"><span class="annottext">Con
+</span><a href="#local-6989586621679070235"><span class="hs-identifier hs-var">conA</span></a></span><span> </span><span class="annot"><span class="annottext">Con
+</span><a href="#local-6989586621679070233"><span class="hs-identifier hs-var">conB</span></a></span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><a href="#local-6989586621679070238"><span class="hs-identifier hs-var">goDecl</span></a></span><span> </span><span class="annot"><span class="annottext">Dec
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Dec
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-41"></span><span>        </span><span class="annot"><span class="annottext">StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a
+</span><span class="hs-identifier hs-var">mzero</span></span><span>
+</span><span id="line-42"></span><span>    </span><span id="local-6989586621679070232"><span class="annot"><span class="annottext">goParam :: TyVarBndr -&gt; TyVarBndr -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070232"><span class="hs-identifier hs-var hs-var">goParam</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">KindedTV</span></span><span> </span><span id="local-6989586621679070229"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679070229"><span class="hs-identifier hs-var">nameA</span></a></span></span><span> </span><span id="local-6989586621679070228"><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070228"><span class="hs-identifier hs-var">kindA</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">KindedTV</span></span><span> </span><span id="local-6989586621679070227"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679070227"><span class="hs-identifier hs-var">nameB</span></a></span></span><span> </span><span id="local-6989586621679070226"><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070226"><span class="hs-identifier hs-var">kindB</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-43"></span><span>        </span><span class="annot"><span class="annottext">Kind -&gt; Kind -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+Kind -&gt; Kind -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070225"><span class="hs-identifier hs-var">goType</span></a></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070228"><span class="hs-identifier hs-var">kindA</span></a></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070226"><span class="hs-identifier hs-var">kindB</span></a></span><span>
+</span><span id="line-44"></span><span>        </span><span class="annot"><span class="annottext">(Map Name Name -&gt; Map Name Name) -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) s. Monad m =&gt; (s -&gt; s) -&gt; StateT s m ()
+</span><span class="hs-identifier hs-var">State.modify'</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Name -&gt; Name -&gt; Map Name Name -&gt; Map Name Name
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679070229"><span class="hs-identifier hs-var">nameA</span></a></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679070227"><span class="hs-identifier hs-var">nameB</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="#local-6989586621679070232"><span class="hs-identifier hs-var">goParam</span></a></span><span> </span><span class="annot"><span class="annottext">TyVarBndr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">TyVarBndr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-46"></span><span>        </span><span class="annot"><span class="annottext">StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a
+</span><span class="hs-identifier hs-var">mzero</span></span><span>
+</span><span id="line-47"></span><span>    </span><span id="local-6989586621679070225"><span class="annot"><span class="annottext">goType :: Kind -&gt; Kind -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070225"><span class="hs-identifier hs-var hs-var">goType</span></a></span></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><span class="hs-identifier hs-var">ArrowT</span></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><span class="hs-identifier hs-var">ArrowT</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-48"></span><span>        </span><span class="annot"><span class="annottext">() -&gt; StateT (Map Name Name) m ()
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>    </span><span class="annot"><a href="#local-6989586621679070225"><span class="hs-identifier hs-var">goType</span></a></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><span class="hs-identifier hs-var">StarT</span></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><span class="hs-identifier hs-var">StarT</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-50"></span><span>        </span><span class="annot"><span class="annottext">() -&gt; StateT (Map Name Name) m ()
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><a href="#local-6989586621679070225"><span class="hs-identifier hs-var">goType</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">AppT</span></span><span> </span><span id="local-6989586621679070219"><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070219"><span class="hs-identifier hs-var">funA</span></a></span></span><span> </span><span id="local-6989586621679070218"><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070218"><span class="hs-identifier hs-var">argA</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">AppT</span></span><span> </span><span id="local-6989586621679070217"><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070217"><span class="hs-identifier hs-var">funB</span></a></span></span><span> </span><span id="local-6989586621679070216"><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070216"><span class="hs-identifier hs-var">argB</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-52"></span><span>        </span><span class="annot"><span class="annottext">Kind -&gt; Kind -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070225"><span class="hs-identifier hs-var">goType</span></a></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070219"><span class="hs-identifier hs-var">funA</span></a></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070217"><span class="hs-identifier hs-var">funB</span></a></span><span>
+</span><span id="line-53"></span><span>        </span><span class="annot"><span class="annottext">Kind -&gt; Kind -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070225"><span class="hs-identifier hs-var">goType</span></a></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070218"><span class="hs-identifier hs-var">argA</span></a></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070216"><span class="hs-identifier hs-var">argB</span></a></span><span>
+</span><span id="line-54"></span><span>    </span><span class="annot"><a href="#local-6989586621679070225"><span class="hs-identifier hs-var">goType</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VarT</span></span><span> </span><span id="local-6989586621679070214"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679070214"><span class="hs-identifier hs-var">varA</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">VarT</span></span><span> </span><span id="local-6989586621679070213"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679070213"><span class="hs-identifier hs-var">varB</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-55"></span><span>        </span><span id="local-6989586621679070212"><span class="annot"><span class="annottext">Maybe Name
+</span><a href="#local-6989586621679070212"><span class="hs-identifier hs-var">varAImage</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Map Name Name -&gt; Maybe Name)
+-&gt; StateT (Map Name Name) m (Maybe Name)
+forall (m :: * -&gt; *) s a. Monad m =&gt; (s -&gt; a) -&gt; StateT s m a
+</span><span class="hs-identifier hs-var">State.gets</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Name -&gt; Map Name Name -&gt; Maybe Name
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679070214"><span class="hs-identifier hs-var">varA</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>        </span><span class="annot"><span class="annottext">Bool -&gt; StateT (Map Name Name) m ()
+forall (f :: * -&gt; *). Alternative f =&gt; Bool -&gt; f ()
+</span><span class="hs-identifier hs-var">guard</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Name
+</span><a href="#local-6989586621679070212"><span class="hs-identifier hs-var">varAImage</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Name -&gt; Maybe Name -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Name -&gt; Maybe Name
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679070213"><span class="hs-identifier hs-var">varB</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>    </span><span class="annot"><a href="#local-6989586621679070225"><span class="hs-identifier hs-var">goType</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">TupleT</span></span><span> </span><span id="local-6989586621679070208"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679070208"><span class="hs-identifier hs-var">nA</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">TupleT</span></span><span> </span><span id="local-6989586621679070207"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679070207"><span class="hs-identifier hs-var">nB</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-58"></span><span>        </span><span class="annot"><span class="annottext">Bool -&gt; StateT (Map Name Name) m ()
+forall (f :: * -&gt; *). Alternative f =&gt; Bool -&gt; f ()
+</span><span class="hs-identifier hs-var">guard</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679070208"><span class="hs-identifier hs-var">nA</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679070207"><span class="hs-identifier hs-var">nB</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><a href="#local-6989586621679070225"><span class="hs-identifier hs-var">goType</span></a></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-60"></span><span>        </span><span class="annot"><span class="annottext">StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a
+</span><span class="hs-identifier hs-var">mzero</span></span><span>
+</span><span id="line-61"></span><span>    </span><span id="local-6989586621679070231"><span class="annot"><span class="annottext">goCon :: Con -&gt; Con -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070231"><span class="hs-identifier hs-var hs-var">goCon</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NormalC</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679070205"><span class="annot"><span class="annottext">[BangType]
+</span><a href="#local-6989586621679070205"><span class="hs-identifier hs-var">fieldsA</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NormalC</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679070204"><span class="annot"><span class="annottext">[BangType]
+</span><a href="#local-6989586621679070204"><span class="hs-identifier hs-var">fieldsB</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-62"></span><span>        </span><span class="annot"><span class="annottext">(BangType -&gt; BangType -&gt; StateT (Map Name Name) m ())
+-&gt; [BangType] -&gt; [BangType] -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a b.
+MonadPlus m =&gt;
+(a -&gt; b -&gt; m ()) -&gt; [a] -&gt; [b] -&gt; m ()
+</span><a href="Control.Reducible.Internal.TH.html#zipWithStrict_"><span class="hs-identifier hs-var">zipWithStrict_</span></a></span><span>
+</span><span id="line-63"></span><span>            </span><span class="annot"><span class="annottext">BangType -&gt; BangType -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a.
+(MonadPlus m, Eq a) =&gt;
+(a, Kind) -&gt; (a, Kind) -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070203"><span class="hs-identifier hs-var">goField</span></a></span><span>
+</span><span id="line-64"></span><span>            </span><span class="annot"><span class="annottext">[BangType]
+</span><a href="#local-6989586621679070205"><span class="hs-identifier hs-var">fieldsA</span></a></span><span>
+</span><span id="line-65"></span><span>            </span><span class="annot"><span class="annottext">[BangType]
+</span><a href="#local-6989586621679070204"><span class="hs-identifier hs-var">fieldsB</span></a></span><span>
+</span><span id="line-66"></span><span>    </span><span class="annot"><a href="#local-6989586621679070231"><span class="hs-identifier hs-var">goCon</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">RecC</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679070201"><span class="annot"><span class="annottext">[VarBangType]
+</span><a href="#local-6989586621679070201"><span class="hs-identifier hs-var">recFieldsA</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NormalC</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679070200"><span class="annot"><span class="annottext">[BangType]
+</span><a href="#local-6989586621679070200"><span class="hs-identifier hs-var">fieldsB</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-67"></span><span>        </span><span class="annot"><span class="annottext">(BangType -&gt; BangType -&gt; StateT (Map Name Name) m ())
+-&gt; [BangType] -&gt; [BangType] -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a b.
+MonadPlus m =&gt;
+(a -&gt; b -&gt; m ()) -&gt; [a] -&gt; [b] -&gt; m ()
+</span><a href="Control.Reducible.Internal.TH.html#zipWithStrict_"><span class="hs-identifier hs-var">zipWithStrict_</span></a></span><span>
+</span><span id="line-68"></span><span>            </span><span class="annot"><span class="annottext">BangType -&gt; BangType -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a.
+(MonadPlus m, Eq a) =&gt;
+(a, Kind) -&gt; (a, Kind) -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070203"><span class="hs-identifier hs-var">goField</span></a></span><span>
+</span><span id="line-69"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(VarBangType -&gt; BangType) -&gt; [VarBangType] -&gt; [BangType]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">VarBangType -&gt; BangType
+forall a a b. (a, a, b) -&gt; (a, b)
+</span><a href="#local-6989586621679070199"><span class="hs-identifier hs-var">stripFieldName</span></a></span><span> </span><span class="annot"><span class="annottext">[VarBangType]
+</span><a href="#local-6989586621679070201"><span class="hs-identifier hs-var">recFieldsA</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-70"></span><span>            </span><span class="annot"><span class="annottext">[BangType]
+</span><a href="#local-6989586621679070200"><span class="hs-identifier hs-var">fieldsB</span></a></span><span>
+</span><span id="line-71"></span><span>    </span><span class="annot"><a href="#local-6989586621679070231"><span class="hs-identifier hs-var">goCon</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">NormalC</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679070198"><span class="annot"><span class="annottext">[BangType]
+</span><a href="#local-6989586621679070198"><span class="hs-identifier hs-var">fieldsA</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">RecC</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679070197"><span class="annot"><span class="annottext">[VarBangType]
+</span><a href="#local-6989586621679070197"><span class="hs-identifier hs-var">recFieldsB</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-72"></span><span>        </span><span class="annot"><span class="annottext">(BangType -&gt; BangType -&gt; StateT (Map Name Name) m ())
+-&gt; [BangType] -&gt; [BangType] -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a b.
+MonadPlus m =&gt;
+(a -&gt; b -&gt; m ()) -&gt; [a] -&gt; [b] -&gt; m ()
+</span><a href="Control.Reducible.Internal.TH.html#zipWithStrict_"><span class="hs-identifier hs-var">zipWithStrict_</span></a></span><span>
+</span><span id="line-73"></span><span>            </span><span class="annot"><span class="annottext">BangType -&gt; BangType -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a.
+(MonadPlus m, Eq a) =&gt;
+(a, Kind) -&gt; (a, Kind) -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070203"><span class="hs-identifier hs-var">goField</span></a></span><span>
+</span><span id="line-74"></span><span>            </span><span class="annot"><span class="annottext">[BangType]
+</span><a href="#local-6989586621679070198"><span class="hs-identifier hs-var">fieldsA</span></a></span><span>
+</span><span id="line-75"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(VarBangType -&gt; BangType) -&gt; [VarBangType] -&gt; [BangType]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">VarBangType -&gt; BangType
+forall a a b. (a, a, b) -&gt; (a, b)
+</span><a href="#local-6989586621679070199"><span class="hs-identifier hs-var">stripFieldName</span></a></span><span> </span><span class="annot"><span class="annottext">[VarBangType]
+</span><a href="#local-6989586621679070197"><span class="hs-identifier hs-var">recFieldsB</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span>    </span><span class="annot"><a href="#local-6989586621679070231"><span class="hs-identifier hs-var">goCon</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">RecC</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679070196"><span class="annot"><span class="annottext">[VarBangType]
+</span><a href="#local-6989586621679070196"><span class="hs-identifier hs-var">recFieldsA</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">RecC</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679070195"><span class="annot"><span class="annottext">[VarBangType]
+</span><a href="#local-6989586621679070195"><span class="hs-identifier hs-var">recFieldsB</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-77"></span><span>        </span><span class="annot"><span class="annottext">(BangType -&gt; BangType -&gt; StateT (Map Name Name) m ())
+-&gt; [BangType] -&gt; [BangType] -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a b.
+MonadPlus m =&gt;
+(a -&gt; b -&gt; m ()) -&gt; [a] -&gt; [b] -&gt; m ()
+</span><a href="Control.Reducible.Internal.TH.html#zipWithStrict_"><span class="hs-identifier hs-var">zipWithStrict_</span></a></span><span>
+</span><span id="line-78"></span><span>            </span><span class="annot"><span class="annottext">BangType -&gt; BangType -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a.
+(MonadPlus m, Eq a) =&gt;
+(a, Kind) -&gt; (a, Kind) -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070203"><span class="hs-identifier hs-var">goField</span></a></span><span>
+</span><span id="line-79"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(VarBangType -&gt; BangType) -&gt; [VarBangType] -&gt; [BangType]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">VarBangType -&gt; BangType
+forall a a b. (a, a, b) -&gt; (a, b)
+</span><a href="#local-6989586621679070199"><span class="hs-identifier hs-var">stripFieldName</span></a></span><span> </span><span class="annot"><span class="annottext">[VarBangType]
+</span><a href="#local-6989586621679070196"><span class="hs-identifier hs-var">recFieldsA</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-80"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(VarBangType -&gt; BangType) -&gt; [VarBangType] -&gt; [BangType]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">VarBangType -&gt; BangType
+forall a a b. (a, a, b) -&gt; (a, b)
+</span><a href="#local-6989586621679070199"><span class="hs-identifier hs-var">stripFieldName</span></a></span><span> </span><span class="annot"><span class="annottext">[VarBangType]
+</span><a href="#local-6989586621679070195"><span class="hs-identifier hs-var">recFieldsB</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-81"></span><span>    </span><span class="annot"><a href="#local-6989586621679070231"><span class="hs-identifier hs-var">goCon</span></a></span><span> </span><span class="annot"><span class="annottext">Con
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Con
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-82"></span><span>        </span><span class="annot"><span class="annottext">StateT (Map Name Name) m ()
+forall (m :: * -&gt; *) a. MonadPlus m =&gt; m a
+</span><span class="hs-identifier hs-var">mzero</span></span><span>
+</span><span id="line-83"></span><span>    </span><span id="local-6989586621679070203"><span class="annot"><span class="annottext">goField :: (a, Kind) -&gt; (a, Kind) -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070203"><span class="hs-identifier hs-var hs-var">goField</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679070194"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070194"><span class="hs-identifier hs-var">bangA</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679070193"><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070193"><span class="hs-identifier hs-var">typeA</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679070192"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070192"><span class="hs-identifier hs-var">bangB</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679070191"><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070191"><span class="hs-identifier hs-var">typeB</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-84"></span><span>        </span><span class="annot"><span class="annottext">a -&gt; a -&gt; StateT (Map Name Name) m ()
+forall (f :: * -&gt; *) a. (Alternative f, Eq a) =&gt; a -&gt; a -&gt; f ()
+</span><a href="#local-6989586621679070190"><span class="hs-identifier hs-var">goBang</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070194"><span class="hs-identifier hs-var">bangA</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070192"><span class="hs-identifier hs-var">bangB</span></a></span><span>
+</span><span id="line-85"></span><span>        </span><span class="annot"><span class="annottext">Kind -&gt; Kind -&gt; StateT (Map Name Name) m ()
+forall (m :: * -&gt; *).
+MonadPlus m =&gt;
+Kind -&gt; Kind -&gt; StateT (Map Name Name) m ()
+</span><a href="#local-6989586621679070225"><span class="hs-identifier hs-var">goType</span></a></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070193"><span class="hs-identifier hs-var">typeA</span></a></span><span> </span><span class="annot"><span class="annottext">Kind
+</span><a href="#local-6989586621679070191"><span class="hs-identifier hs-var">typeB</span></a></span><span>
+</span><span id="line-86"></span><span>    </span><span id="local-6989586621679070190"><span class="annot"><span class="annottext">goBang :: a -&gt; a -&gt; f ()
+</span><a href="#local-6989586621679070190"><span class="hs-identifier hs-var hs-var">goBang</span></a></span></span><span> </span><span id="local-6989586621679070189"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070189"><span class="hs-identifier hs-var">ba</span></a></span></span><span> </span><span id="local-6989586621679070188"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070188"><span class="hs-identifier hs-var">bb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-87"></span><span>        </span><span class="annot"><span class="annottext">Bool -&gt; f ()
+forall (f :: * -&gt; *). Alternative f =&gt; Bool -&gt; f ()
+</span><span class="hs-identifier hs-var">guard</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070189"><span class="hs-identifier hs-var">ba</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070188"><span class="hs-identifier hs-var">bb</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-88"></span><span>    </span><span id="local-6989586621679070199"><span class="annot"><span class="annottext">stripFieldName :: (a, a, b) -&gt; (a, b)
+</span><a href="#local-6989586621679070199"><span class="hs-identifier hs-var hs-var">stripFieldName</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679070187"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070187"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679070186"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679070186"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679070187"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679070186"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="annot"><a href="Control.Reducible.Internal.TH.html#chooseInstanceIfMatchingRepr"><span class="hs-identifier hs-type">chooseInstanceIfMatchingRepr</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-91"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Name</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-92"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Name</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-93"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">DecsQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-94"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">DecsQ</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-95"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">DecsQ</span></span><span>
+</span><span id="line-96"></span><span id="chooseInstanceIfMatchingRepr"><span class="annot"><span class="annottext">chooseInstanceIfMatchingRepr :: Name -&gt; Name -&gt; DecsQ -&gt; DecsQ -&gt; DecsQ
+</span><a href="Control.Reducible.Internal.TH.html#chooseInstanceIfMatchingRepr"><span class="hs-identifier hs-var hs-var">chooseInstanceIfMatchingRepr</span></a></span></span><span> </span><span id="local-6989586621679070185"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679070185"><span class="hs-identifier hs-var">nameA</span></a></span></span><span> </span><span id="local-6989586621679070184"><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679070184"><span class="hs-identifier hs-var">nameB</span></a></span></span><span> </span><span id="local-6989586621679070183"><span class="annot"><span class="annottext">DecsQ
+</span><a href="#local-6989586621679070183"><span class="hs-identifier hs-var">onMatch</span></a></span></span><span> </span><span id="local-6989586621679070182"><span class="annot"><span class="annottext">DecsQ
+</span><a href="#local-6989586621679070182"><span class="hs-identifier hs-var">onDiff</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-97"></span><span>    </span><span id="local-6989586621679070181"><span class="annot"><span class="annottext">Info
+</span><a href="#local-6989586621679070181"><span class="hs-identifier hs-var">infoA</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Name -&gt; Q Info
+</span><span class="hs-identifier hs-var">reify</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679070185"><span class="hs-identifier hs-var">nameA</span></a></span><span>
+</span><span id="line-98"></span><span>    </span><span id="local-6989586621679070179"><span class="annot"><span class="annottext">Info
+</span><a href="#local-6989586621679070179"><span class="hs-identifier hs-var">infoB</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Name -&gt; Q Info
+</span><span class="hs-identifier hs-var">reify</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679070184"><span class="hs-identifier hs-var">nameB</span></a></span><span>
+</span><span id="line-99"></span><span>    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Info -&gt; Info -&gt; Bool
+</span><a href="Control.Reducible.Internal.TH.html#isMatchingRepr"><span class="hs-identifier hs-var">isMatchingRepr</span></a></span><span> </span><span class="annot"><span class="annottext">Info
+</span><a href="#local-6989586621679070181"><span class="hs-identifier hs-var">infoA</span></a></span><span> </span><span class="annot"><span class="annottext">Info
+</span><a href="#local-6989586621679070179"><span class="hs-identifier hs-var">infoB</span></a></span><span>
+</span><span id="line-100"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-101"></span><span>            </span><span class="annot"><span class="annottext">DecsQ
+</span><a href="#local-6989586621679070183"><span class="hs-identifier hs-var">onMatch</span></a></span><span>
+</span><span id="line-102"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-103"></span><span>            </span><span class="annot"><span class="annottext">String -&gt; Q ()
+</span><span class="hs-identifier hs-var">reportWarning</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Q ()) -&gt; String -&gt; Q ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-104"></span><span>                </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Internal representation for &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Name -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Name
+</span><a href="#local-6989586621679070185"><span class="hs-identifier hs-var">nameA</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot; \
+                \differs from the expected,\n\
+                \falling back to a default instance implementation&quot;</span></span><span>
+</span><span id="line-107"></span><span>            </span><span class="annot"><span class="annottext">DecsQ
+</span><a href="#local-6989586621679070182"><span class="hs-identifier hs-var">onDiff</span></a></span><span>
+</span><span id="line-108"></span></pre></body></html>

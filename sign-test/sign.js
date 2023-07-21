@@ -29,15 +29,16 @@ async function doSign(button) {
                 "latest",
             ],
         })
-        const message = JSON.stringify(heroTokenMessage(
+        const messageJson = heroTokenMessage(
             primtypeInput.value,
             contractaddressInput.value,
             tokenidInput.value,
             Number(nftNonce) + 1
-        ));
+        )
+        console.log(messageJson)
         const signature = await eth.request({
             method: 'eth_signTypedData_v4',
-            params: [address, message],
+            params: [address, JSON.stringify(messageJson)],
         })
         outputTA.innerText = signature
     } catch (ex) {

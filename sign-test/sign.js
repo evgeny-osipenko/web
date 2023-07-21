@@ -1,31 +1,44 @@
 async function doSign(button) {
-    let primtypeInput = document.getElementById("primtype")
-    let tokenidInput = document.getElementById("tokenid")
-    let nonceInput = document.getElementById("nonce")
-    let outputTA = document.getElementById("output")
+    const primtypeInput = document.getElementById("primtype")
+    const contractaddressInput = document.getElementById("contractaddress")
+    const tokenidInput = document.getElementById("tokenid")
+    const outputTA = document.getElementById("output")
     button.disabled = true
     try {
-        let eth = window.ethereum
+        const eth = window.ethereum
         if (!eth) {
             throw "No ethereum wallet available"
         }
-        let addressList = await eth.request({
-                method: 'eth_requestAccounts',
-                params: [],
-            })
-        let address = addressList[0]
+        const addressList = await eth.request({
+            method: 'eth_requestAccounts',
+            params: [],
+        })
+        const address = addressList[0]
         if (!address) {
             throw "No address"
         }
+        const nftNonce = await eth.request({
+            method: 'eth_call',
+            params: [
+                {
+                    "to": contractaddressInput.value,
+                    "data":
+                        "0x12f1dbc8" +
+                        numberToHex256(Number(tokenidInput.value)),
+                },
+                "latest",
+            ],
+        })
         const message = JSON.stringify(heroTokenMessage(
             primtypeInput.value,
+            contractaddressInput.value,
             tokenidInput.value,
-            nonceInput.value
+            Number(nftNonce) + 1
         ));
-        let signature = await eth.request({
-                method: 'eth_signTypedData_v4',
-                params: [address, message],
-            })
+        const signature = await eth.request({
+            method: 'eth_signTypedData_v4',
+            params: [address, message],
+        })
         outputTA.innerText = signature
     } catch (ex) {
         if (ex.message) {
@@ -37,13 +50,13 @@ async function doSign(button) {
     button.disabled = false
 }
 
-function heroTokenMessage(primType, tokenId, nonce) {
+function heroTokenMessage(primType, contractAddress, tokenId, nonce) {
     return {
         domain: {
             name: 'HeroesToken',
             version: '1',
             chainId: 80001, // 0x13881
-            verifyingContract: '0x424139b19210f1de80b41E80f36D82b878fAd107',
+            verifyingContract: contractAddress,
         },
         message: {
             tokenId: tokenId,
@@ -89,4 +102,21 @@ function byteToHex(b) {
     } else {
         return s
     }
+}
+
+function numberToHex256(x) {
+    if (!(x > 0)) {
+        x = 0
+    }
+    let buf = ''
+    for (let i = 0; i < 64; ++i) {
+        let d = x % 16
+        if (d < 10) {
+            buf = String.fromCharCode(48 + d) + buf
+        } else {
+            buf = String.fromCharCode(87 + d) + buf
+        }
+        x = (x - d) / 16
+    }
+    return buf
 }

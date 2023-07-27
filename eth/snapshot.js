@@ -218,7 +218,8 @@ async function getTransferEvents(contractAddress, fromBlock, toBlock) {
             })
             return [toBlock, logs]
         } catch (ex) {
-            if (ex.data && ex.data.message) {
+            console.log('shit crypto', ex)
+            if (ex.data?.message) {
                 let match = responseSizeExceededRe.exec(ex.data.message)
                 if (match) {
                     toBlock = Number(match[2])

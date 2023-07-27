@@ -2,7 +2,7 @@ const addressRe = /^0[xX][0-9a-fA-F]{40}$/
 
 const addressTopicRe = /^0[xX]0{24}([0-9a-fA-F]{40})$/
 
-const responseSizeExceededRe = /Log response size exceeded.*\[\s*(0x[0-9a-fA-F]+)\s*\,\s*(0x[0-9a-fA-F]+)\s*\]/
+const responseSizeExceededRe = /\[\s*(0x[0-9a-fA-F]+)\s*\,\s*(0x[0-9a-fA-F]+)\s*\]/
 
 const nullAddress = '0x0000000000000000000000000000000000000000'
 
@@ -165,17 +165,41 @@ async function determineContractType(contractAddress) {
 }
 
 async function get721DistributionFromAt(contractAddress, deploymentBlockNumber, snapshotBlockNumber) {
+    const maxIncreaseFactor = 1.2
     let currentBlock = deploymentBlockNumber
     let state = {}
+    let chunkSize = 1000
+    let startTime = Date.now()
     while (currentBlock <= snapshotBlockNumber) {
+        const blocksLeft = snapshotBlockNumber - currentBlock + 1
+        const blocksProcessed = currentBlock - deploymentBlockNumber
+        const deltaTime = Date.now() - startTime
+        const msPerBlock = deltaTime / blocksProcessed
+        const msEstimate = blocksLeft * msPerBlock
         statuswindow.innerText =
-            `Processing logs... (${snapshotBlockNumber - currentBlock + 1})`
-        const [beforeNextBlock, logs] = await getTransferEvents(contractAddress, currentBlock, snapshotBlockNumber)
+            `Processing logs... (${blocksLeft})\nETA: ${msToTimeString(msEstimate)}`
+        let toBlock = currentBlock + chunkSize - 1
+        if (toBlock > snapshotBlockNumber) {
+            toBlock = snapshotBlockNumber
+        }
+        const [beforeNextBlock, logs] = await getTransferEvents(
+            contractAddress, currentBlock, toBlock,
+        )
         for (const entry of logs) {
             const addressMatch = addressTopicRe.exec(entry.topics[2])
             const toAddress = '0x' + addressMatch[1]
             const id = Number(entry.topics[3])
             state[id] = toAddress
+        }
+        chunkSize = beforeNextBlock - currentBlock + 1
+        let fillFraction = logs.length / 100
+        if (fillFraction < 1/maxIncreaseFactor) {
+            chunkSize = (chunkSize * maxIncreaseFactor) | 0
+        } else {
+            chunkSize = (chunkSize / fillFraction) | 0
+        }
+        if (chunkSize < 100) {
+            chunkSize = 100
         }
         currentBlock = beforeNextBlock + 1
     }
@@ -235,6 +259,20 @@ function serialize721Distribution(dist) {
         table,
         'data:text/csv;base64,' + btoa('"id","address"' + csvLines.join('')),
     ]
+}
+
+function msToTimeString(time) {
+    const s = (Math.floor(time / 1000) % 60)
+    const m = (Math.floor(time / 60000) % 60)
+    const h = (Math.floor(time / 3600000) % 60)
+    let str = s.toString()
+    if (time >= 60000) {
+        str = m.toString() + ':' + str.padStart(2, '0')
+    }
+    if (time >= 3600000) {
+        str = h.toString() + ':' + str.padStart(5, '0')
+    }
+    return str
 }
 
 function numberToHex(n) {

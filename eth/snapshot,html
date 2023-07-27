@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <script src="snapshot.js"></script>
+        <style>
+            table.dist-table {
+            }
+
+            td.id-header {
+                text-align: center;
+            }
+
+            td.address-header {
+                text-align: center;
+            }
+
+            td.id-cell {
+                font-family: monospace;
+                text-align: right;
+                padding: 0 1em;
+            }
+
+            td.address-cell {
+                font-family: monospace;
+                text-align: center;
+                padding: 0 1em;
+            }
+        </style>
+    </head>
+    <body>
+        Contract address:<br />
+        <input type="text" id="contractaddress" value="0x367cd9781309bC53726B8AF721aB65aa271F33bF" style="width:30em" /><br />
+        Snapshot timestamp:<br />
+        <input type="text" id="snapshottime" value="" oninput="updateSnapshotTimePreview()" />
+        <span id="snapshottimepreview"></span><br />
+        <tt>YYYY-MM-DD hh:mm:ss</tt> for local time.<br />
+        Append <tt>Z</tt> at the end for UTC time.<br />
+        <input type="button" value="take snapshot" onclick="doSnapshot(this)" /><br />
+        <a id="resultanchor" style="visibility:hidden">Download the snapshot as CSV</a>
+        <div id="statuswindow"></div>
+    </body>
+</html>

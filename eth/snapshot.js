@@ -61,14 +61,12 @@ async function doSnapshot(button) {
         }
     } catch (ex) {
         statuswindow.style.color = 'red'
-        if (ex.data) {
-            if (ex.data.error) {
-                statuswindow.innerText =
-                    ex.message + ': [' + ex.data.error.code.toString() + '] ' + ex.data.error.message
-            } else {
-                statuswindow.innerText =
-                    ex.message + ': [' + ex.data.code.toString() + '] ' + ex.data.message
-            }
+        if (ex.data?.error?.message) {
+            statuswindow.innerText =
+                ex.message + ': [' + ex.data.error.code + '] ' + ex.data.error.message
+        } else if (ex.data?.message) {
+            statuswindow.innerText =
+                ex.message + ': [' + ex.data.code + '] ' + ex.data.message
         } else if (ex.message) {
             statuswindow.innerText = ex.message
         } else {

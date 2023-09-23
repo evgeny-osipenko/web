@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- |</span><span>
+</span><span id="line-2"></span><span class="hs-comment">-- Module      : Crypto.Secp256k1</span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- License     : UNLICENSE</span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- Maintainer  : Jean-Pierre Rupp &lt;jprupp@protonmail.ch&gt;</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Portability : POSIX</span><span>
+</span><span id="line-7"></span><span class="hs-comment">--</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- Crytpographic functions from Bitcoin&#8217;s secp256k1 library.</span><span>
+</span><span id="line-9"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Crypto.Secp256k1</span><span>
+</span><span id="line-10"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Context</span></span><span>
+</span><span id="line-11"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Context.html#Ctx"><span class="hs-identifier">Ctx</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-12"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Context.html#withContext"><span class="hs-identifier">withContext</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Context.html#randomizeContext"><span class="hs-identifier">randomizeContext</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Context.html#createContext"><span class="hs-identifier">createContext</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Context.html#cloneContext"><span class="hs-identifier">cloneContext</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Context.html#destroyContext"><span class="hs-identifier">destroyContext</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Messages</span></span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#Msg"><span class="hs-identifier">Msg</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#msg"><span class="hs-identifier">msg</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Secret Keys</span></span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#SecKey"><span class="hs-identifier">SecKey</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#secKey"><span class="hs-identifier">secKey</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#derivePubKey"><span class="hs-identifier">derivePubKey</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Public Keys</span></span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#PubKey"><span class="hs-identifier">PubKey</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#pubKey"><span class="hs-identifier">pubKey</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#importPubKey"><span class="hs-identifier">importPubKey</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#exportPubKey"><span class="hs-identifier">exportPubKey</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Signatures</span></span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#Sig"><span class="hs-identifier">Sig</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#sig"><span class="hs-identifier">sig</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#signMsg"><span class="hs-identifier">signMsg</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#verifySig"><span class="hs-identifier">verifySig</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#normalizeSig"><span class="hs-identifier">normalizeSig</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** DER</span></span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#importSig"><span class="hs-identifier">importSig</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#exportSig"><span class="hs-identifier">exportSig</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Compact</span></span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#CompactSig"><span class="hs-identifier">CompactSig</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#compactSig"><span class="hs-identifier">compactSig</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-47"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#exportCompactSig"><span class="hs-identifier">exportCompactSig</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-48"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#importCompactSig"><span class="hs-identifier">importCompactSig</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Addition &amp; Multiplication</span></span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#Tweak"><span class="hs-identifier">Tweak</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#tweak"><span class="hs-identifier">tweak</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-53"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#tweakAddSecKey"><span class="hs-identifier">tweakAddSecKey</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-54"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#tweakMulSecKey"><span class="hs-identifier">tweakMulSecKey</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-55"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#tweakAddPubKey"><span class="hs-identifier">tweakAddPubKey</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-56"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#tweakMulPubKey"><span class="hs-identifier">tweakMulPubKey</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-57"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#combinePubKeys"><span class="hs-identifier">combinePubKeys</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html#tweakNegate"><span class="hs-identifier">tweakNegate</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-59"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-61"></span><span>
+</span><span id="line-62"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Base.html"><span class="hs-identifier">Crypto.Secp256k1.Internal.Base</span></a></span><span>
+</span><span id="line-63"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Context.html"><span class="hs-identifier">Crypto.Secp256k1.Internal.Context</span></a></span><span>
+</span><span id="line-64"></span></pre></body></html>

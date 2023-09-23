@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">{-| We use &quot;Crypto.Secp256k1.Recovery&quot; as a back-end for the cryptographic operations. -}</span></span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.SignTyped.Crypto</span><span>
+</span><span id="line-3"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.SignTyped.Crypto.html#MessageHash"><span class="hs-identifier">MessageHash</span></a></span><span>
+</span><span id="line-4"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Crypto.html#Signature"><span class="hs-identifier">Signature</span></a></span><span>
+</span><span id="line-5"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Crypto.html#Address"><span class="hs-identifier">Address</span></a></span><span>
+</span><span id="line-6"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Crypto.html#pubKeyToAddress"><span class="hs-identifier">pubKeyToAddress</span></a></span><span>
+</span><span id="line-7"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Crypto.html#messageHashSign"><span class="hs-identifier">messageHashSign</span></a></span><span>
+</span><span id="line-8"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Crypto.html#messageHashRecover"><span class="hs-identifier">messageHashRecover</span></a></span><span>
+</span><span id="line-9"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Crypto.html#messageHashVerify"><span class="hs-identifier">messageHashVerify</span></a></span><span>
+</span><span id="line-10"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Applicative</span></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Util.html"><span class="hs-identifier">Data.SignTyped.Util</span></a></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Word</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.ByteString</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">BS</span></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Crypto.Secp256k1.Recovery</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">C</span></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">type</span><span> </span><span id="MessageHash"><span class="annot"><a href="Data.SignTyped.Crypto.html#MessageHash"><span class="hs-identifier hs-var">MessageHash</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">C.Msg</span></span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">type</span><span> </span><span id="Signature"><span class="annot"><a href="Data.SignTyped.Crypto.html#Signature"><span class="hs-identifier hs-var">Signature</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">type</span><span> </span><span id="Address"><span class="annot"><a href="Data.SignTyped.Crypto.html#Address"><span class="hs-identifier hs-var">Address</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="annot"><span class="hs-comment">{-| Derive an Ethereum-compatible address from a public key. -}</span></span><span>
+</span><span id="line-26"></span><span class="annot"><a href="Data.SignTyped.Crypto.html#pubKeyToAddress"><span class="hs-identifier hs-type">pubKeyToAddress</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">C.Ctx</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">C.PubKey</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Crypto.html#Address"><span class="hs-identifier hs-type">Address</span></a></span><span>
+</span><span id="line-30"></span><span id="pubKeyToAddress"><span class="annot"><span class="annottext">pubKeyToAddress :: Ctx -&gt; PubKey -&gt; Address
+</span><a href="Data.SignTyped.Crypto.html#pubKeyToAddress"><span class="hs-identifier hs-var hs-var">pubKeyToAddress</span></a></span></span><span> </span><span id="local-6989586621679218129"><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679218129"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><span class="annottext">Int -&gt; Address -&gt; Address
+</span><span class="hs-identifier hs-var">BS.drop</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">12</span></span><span> </span><span class="annot"><span class="annottext">(Address -&gt; Address) -&gt; (PubKey -&gt; Address) -&gt; PubKey -&gt; Address
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Address -&gt; Address
+</span><a href="Data.SignTyped.Util.html#keccak256"><span class="hs-identifier hs-var">keccak256</span></a></span><span> </span><span class="annot"><span class="annottext">(Address -&gt; Address) -&gt; (PubKey -&gt; Address) -&gt; PubKey -&gt; Address
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Address -&gt; Address
+</span><span class="hs-identifier hs-var">BS.drop</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span> </span><span class="annot"><span class="annottext">(Address -&gt; Address) -&gt; (PubKey -&gt; Address) -&gt; PubKey -&gt; Address
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Ctx -&gt; Bool -&gt; PubKey -&gt; Address
+</span><span class="hs-identifier hs-var">C.exportPubKey</span></span><span> </span><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679218129"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-comment">{- https://eips.ethereum.org/EIPS/eip-155 -}</span><span>
+</span><span id="line-34"></span><span class="annot"><a href="Data.SignTyped.Crypto.html#chainIdOffset"><span class="hs-identifier hs-type">chainIdOffset</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Word8</span></span><span>
+</span><span id="line-35"></span><span id="chainIdOffset"><span class="annot"><span class="annottext">chainIdOffset :: Int -&gt; Word8
+</span><a href="Data.SignTyped.Crypto.html#chainIdOffset"><span class="hs-identifier hs-var hs-var">chainIdOffset</span></a></span></span><span> </span><span id="local-6989586621679218135"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679218135"><span class="hs-identifier hs-var">chainId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Word8
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">fromIntegral</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679218135"><span class="hs-identifier hs-var">chainId</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">36</span></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="annot"><span class="hs-comment">{-| Sign a given message with a given secret key. The signature produced is the 65-byte (v,r,s) recoverable signature.
+
+    If a chainId is provided, it will be encoded to the v byte of the signature according to EIP-155, as an offset of
+(chainId * 2 + 36). Otherwise, the default offset of 27 is used. -}</span></span><span>
+</span><span id="line-41"></span><span class="annot"><a href="Data.SignTyped.Crypto.html#messageHashSign"><span class="hs-identifier hs-type">messageHashSign</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">C.Ctx</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">C.SecKey</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-comment">{-^ chainId -}</span></span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Crypto.html#MessageHash"><span class="hs-identifier hs-type">MessageHash</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Crypto.html#Signature"><span class="hs-identifier hs-type">Signature</span></a></span><span>
+</span><span id="line-47"></span><span id="messageHashSign"><span class="annot"><span class="annottext">messageHashSign :: Ctx -&gt; SecKey -&gt; Maybe Int -&gt; MessageHash -&gt; Address
+</span><a href="Data.SignTyped.Crypto.html#messageHashSign"><span class="hs-identifier hs-var hs-var">messageHashSign</span></a></span></span><span> </span><span id="local-6989586621679218138"><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679218138"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span id="local-6989586621679218139"><span class="annot"><span class="annottext">SecKey
+</span><a href="#local-6989586621679218139"><span class="hs-identifier hs-var">secKey</span></a></span></span><span> </span><span id="local-6989586621679218140"><span class="annot"><span class="annottext">Maybe Int
+</span><a href="#local-6989586621679218140"><span class="hs-identifier hs-var">mbChainId</span></a></span></span><span> </span><span id="local-6989586621679218141"><span class="annot"><span class="annottext">MessageHash
+</span><a href="#local-6989586621679218141"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="annot"><span class="hs-identifier hs-type">C.CompactRecSig</span></span><span> </span><span id="local-6989586621679218143"><span class="annot"><span class="annottext">Address
+</span><a href="#local-6989586621679218143"><span class="hs-identifier hs-var">rs</span></a></span></span><span> </span><span id="local-6989586621679218144"><span class="annot"><span class="annottext">Word8
+</span><a href="#local-6989586621679218144"><span class="hs-identifier hs-var">vb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Ctx -&gt; RecSig -&gt; CompactRecSig
+</span><span class="hs-identifier hs-var">C.exportCompactRecSig</span></span><span> </span><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679218138"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">(RecSig -&gt; CompactRecSig) -&gt; RecSig -&gt; CompactRecSig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Ctx -&gt; SecKey -&gt; MessageHash -&gt; RecSig
+</span><span class="hs-identifier hs-var">C.signRecMsg</span></span><span> </span><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679218138"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">SecKey
+</span><a href="#local-6989586621679218139"><span class="hs-identifier hs-var">secKey</span></a></span><span> </span><span class="annot"><span class="annottext">MessageHash
+</span><a href="#local-6989586621679218141"><span class="hs-identifier hs-var">msg</span></a></span><span>
+</span><span id="line-49"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679218147"><span class="annot"><span class="annottext">vs :: Word8
+</span><a href="#local-6989586621679218147"><span class="hs-identifier hs-var hs-var">vs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Word8
+</span><a href="#local-6989586621679218144"><span class="hs-identifier hs-var">vb</span></a></span><span> </span><span class="annot"><span class="annottext">Word8 -&gt; Word8 -&gt; Word8
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Word8 -&gt; (Int -&gt; Word8) -&gt; Maybe Int -&gt; Word8
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">Word8
+</span><span class="hs-number">27</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Word8
+</span><a href="Data.SignTyped.Crypto.html#chainIdOffset"><span class="hs-identifier hs-var">chainIdOffset</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Int
+</span><a href="#local-6989586621679218140"><span class="hs-identifier hs-var">mbChainId</span></a></span><span>
+</span><span id="line-50"></span><span>    </span><span class="annot"><span class="annottext">Address -&gt; Word8 -&gt; Address
+</span><span class="hs-identifier hs-var">BS.snoc</span></span><span> </span><span class="annot"><span class="annottext">Address
+</span><a href="#local-6989586621679218143"><span class="hs-identifier hs-var">rs</span></a></span><span> </span><span class="annot"><span class="annottext">Word8
+</span><a href="#local-6989586621679218147"><span class="hs-identifier hs-var">vs</span></a></span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="annot"><span class="hs-comment">{-| Recover an address from a given message and a given (v,r,s) signature.
+
+    For the v component, the default offset of 27 is always allowed. If a chainId is provided, its offset of
+(chainId * 2 + 36) will also be tried.
+
+    In the special case of @chainId = 124 + 128 k@, the value of @v = 28@ becomes ambiguous &#8212; it could mean both
+the odd parity with the default offset 27, and the even parity with the chainId-specific offset of 28. In this case,
+this function interprets it as the latter (the chainId-specific offset takes priority). -}</span></span><span>
+</span><span id="line-60"></span><span class="annot"><a href="Data.SignTyped.Crypto.html#messageHashRecover"><span class="hs-identifier hs-type">messageHashRecover</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">C.Ctx</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-comment">{-^ chainId -}</span></span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Crypto.html#MessageHash"><span class="hs-identifier hs-type">MessageHash</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-64"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Crypto.html#Signature"><span class="hs-identifier hs-type">Signature</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-65"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Data.SignTyped.Crypto.html#Address"><span class="hs-identifier hs-type">Address</span></a></span><span>
+</span><span id="line-66"></span><span id="messageHashRecover"><span class="annot"><span class="annottext">messageHashRecover :: Ctx -&gt; Maybe Int -&gt; MessageHash -&gt; Address -&gt; Maybe Address
+</span><a href="Data.SignTyped.Crypto.html#messageHashRecover"><span class="hs-identifier hs-var hs-var">messageHashRecover</span></a></span></span><span> </span><span id="local-6989586621679218150"><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679218150"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span id="local-6989586621679218151"><span class="annot"><span class="annottext">Maybe Int
+</span><a href="#local-6989586621679218151"><span class="hs-identifier hs-var">mbChainId</span></a></span></span><span> </span><span id="local-6989586621679218152"><span class="annot"><span class="annottext">MessageHash
+</span><a href="#local-6989586621679218152"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span id="local-6989586621679218153"><span class="annot"><span class="annottext">Address
+</span><a href="#local-6989586621679218153"><span class="hs-identifier hs-var">sigBytes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-67"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679218154"><span class="annot"><span class="annottext">Address
+</span><a href="#local-6989586621679218154"><span class="hs-identifier hs-var">rs</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679218155"><span class="annot"><span class="annottext">Word8
+</span><a href="#local-6989586621679218155"><span class="hs-identifier hs-var">vs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Address -&gt; Maybe (Address, Word8)
+</span><span class="hs-identifier hs-var">BS.unsnoc</span></span><span> </span><span class="annot"><span class="annottext">Address
+</span><a href="#local-6989586621679218153"><span class="hs-identifier hs-var">sigBytes</span></a></span><span>
+</span><span id="line-68"></span><span>    </span><span id="local-6989586621679218157"><span class="annot"><span class="annottext">Word8
+</span><a href="#local-6989586621679218157"><span class="hs-identifier hs-var">vb</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-69"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int
+</span><a href="#local-6989586621679218151"><span class="hs-identifier hs-var">mbChainId</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Int -&gt; (Int -&gt; Maybe Word8) -&gt; Maybe Word8
+forall a b. Maybe a -&gt; (a -&gt; Maybe b) -&gt; Maybe b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679218158"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679218158"><span class="hs-identifier hs-var">chainId</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Word8 -&gt; Word8 -&gt; Maybe Word8
+forall {a}. (Num a, Ord a) =&gt; a -&gt; a -&gt; Maybe a
+</span><a href="#local-6989586621679218159"><span class="hs-identifier hs-var">tryOffset</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Word8
+</span><a href="Data.SignTyped.Crypto.html#chainIdOffset"><span class="hs-identifier hs-var">chainIdOffset</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679218158"><span class="hs-identifier hs-var">chainId</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Word8
+</span><a href="#local-6989586621679218155"><span class="hs-identifier hs-var">vs</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-70"></span><span>      </span><span class="annot"><span class="annottext">Maybe Word8 -&gt; Maybe Word8 -&gt; Maybe Word8
+forall a. Maybe a -&gt; Maybe a -&gt; Maybe a
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
+</span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span>
+</span><span id="line-71"></span><span>        </span><span class="annot"><span class="annottext">Word8 -&gt; Word8 -&gt; Maybe Word8
+forall {a}. (Num a, Ord a) =&gt; a -&gt; a -&gt; Maybe a
+</span><a href="#local-6989586621679218159"><span class="hs-identifier hs-var">tryOffset</span></a></span><span> </span><span class="annot"><span class="annottext">Word8
+</span><span class="hs-number">27</span></span><span> </span><span class="annot"><span class="annottext">Word8
+</span><a href="#local-6989586621679218155"><span class="hs-identifier hs-var">vs</span></a></span><span>
+</span><span id="line-72"></span><span>    </span><span id="local-6989586621679218161"><span class="annot"><span class="annottext">RecSig
+</span><a href="#local-6989586621679218161"><span class="hs-identifier hs-var">sig</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Ctx -&gt; CompactRecSig -&gt; Maybe RecSig
+</span><span class="hs-identifier hs-var">C.importCompactRecSig</span></span><span> </span><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679218150"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">(CompactRecSig -&gt; Maybe RecSig) -&gt; CompactRecSig -&gt; Maybe RecSig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Address -&gt; Word8 -&gt; CompactRecSig
+</span><span class="hs-identifier hs-var">C.CompactRecSig</span></span><span> </span><span class="annot"><span class="annottext">Address
+</span><a href="#local-6989586621679218154"><span class="hs-identifier hs-var">rs</span></a></span><span> </span><span class="annot"><span class="annottext">Word8
+</span><a href="#local-6989586621679218157"><span class="hs-identifier hs-var">vb</span></a></span><span>
+</span><span id="line-73"></span><span>    </span><span id="local-6989586621679218163"><span class="annot"><span class="annottext">PubKey
+</span><a href="#local-6989586621679218163"><span class="hs-identifier hs-var">pkey</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Ctx -&gt; RecSig -&gt; MessageHash -&gt; Maybe PubKey
+</span><span class="hs-identifier hs-var">C.recover</span></span><span> </span><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679218150"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">RecSig
+</span><a href="#local-6989586621679218161"><span class="hs-identifier hs-var">sig</span></a></span><span> </span><span class="annot"><span class="annottext">MessageHash
+</span><a href="#local-6989586621679218152"><span class="hs-identifier hs-var">msg</span></a></span><span>
+</span><span id="line-74"></span><span>    </span><span class="annot"><span class="annottext">Address -&gt; Maybe Address
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Address -&gt; Maybe Address) -&gt; Address -&gt; Maybe Address
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Ctx -&gt; PubKey -&gt; Address
+</span><a href="Data.SignTyped.Crypto.html#pubKeyToAddress"><span class="hs-identifier hs-var">pubKeyToAddress</span></a></span><span> </span><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679218150"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">PubKey
+</span><a href="#local-6989586621679218163"><span class="hs-identifier hs-var">pkey</span></a></span><span>
+</span><span id="line-75"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-76"></span><span>    </span><span id="local-6989586621679218159"><span class="annot"><span class="annottext">tryOffset :: a -&gt; a -&gt; Maybe a
+</span><a href="#local-6989586621679218159"><span class="hs-identifier hs-var hs-var">tryOffset</span></a></span></span><span> </span><span id="local-6989586621679218173"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679218173"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621679218174"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679218174"><span class="hs-identifier hs-var">vs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-77"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679218175"><span class="annot"><span class="annottext">vb :: a
+</span><a href="#local-6989586621679218175"><span class="hs-identifier hs-var hs-var">vb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679218174"><span class="hs-identifier hs-var">vs</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679218173"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-78"></span><span>        </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679218175"><span class="hs-identifier hs-var">vb</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-79"></span><span>            </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">a -&gt; Maybe a
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679218175"><span class="hs-identifier hs-var">vb</span></a></span><span>
+</span><span id="line-80"></span><span>            </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Maybe a
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span class="annot"><span class="hs-comment">{-| Verify that a given (v,r,s) signature on a given message corresponds to a given address.
+
+    This function simply recovers the address with `messageHashRecover` and compares it to the one given. -}</span></span><span>
+</span><span id="line-85"></span><span class="annot"><a href="Data.SignTyped.Crypto.html#messageHashVerify"><span class="hs-identifier hs-type">messageHashVerify</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-86"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">C.Ctx</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-87"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-88"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Crypto.html#MessageHash"><span class="hs-identifier hs-type">MessageHash</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-89"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Crypto.html#Signature"><span class="hs-identifier hs-type">Signature</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-90"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Crypto.html#Address"><span class="hs-identifier hs-type">Address</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-91"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-92"></span><span id="messageHashVerify"><span class="annot"><span class="annottext">messageHashVerify :: Ctx -&gt; Maybe Int -&gt; MessageHash -&gt; Address -&gt; Address -&gt; Bool
+</span><a href="Data.SignTyped.Crypto.html#messageHashVerify"><span class="hs-identifier hs-var hs-var">messageHashVerify</span></a></span></span><span> </span><span id="local-6989586621679218177"><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679218177"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span id="local-6989586621679218178"><span class="annot"><span class="annottext">Maybe Int
+</span><a href="#local-6989586621679218178"><span class="hs-identifier hs-var">mbChainId</span></a></span></span><span> </span><span id="local-6989586621679218179"><span class="annot"><span class="annottext">MessageHash
+</span><a href="#local-6989586621679218179"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span id="local-6989586621679218180"><span class="annot"><span class="annottext">Address
+</span><a href="#local-6989586621679218180"><span class="hs-identifier hs-var">sigBytes</span></a></span></span><span> </span><span id="local-6989586621679218181"><span class="annot"><span class="annottext">Address
+</span><a href="#local-6989586621679218181"><span class="hs-identifier hs-var">address</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-93"></span><span>    </span><span class="annot"><span class="annottext">Ctx -&gt; Maybe Int -&gt; MessageHash -&gt; Address -&gt; Maybe Address
+</span><a href="Data.SignTyped.Crypto.html#messageHashRecover"><span class="hs-identifier hs-var">messageHashRecover</span></a></span><span> </span><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679218177"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Int
+</span><a href="#local-6989586621679218178"><span class="hs-identifier hs-var">mbChainId</span></a></span><span> </span><span class="annot"><span class="annottext">MessageHash
+</span><a href="#local-6989586621679218179"><span class="hs-identifier hs-var">msg</span></a></span><span> </span><span class="annot"><span class="annottext">Address
+</span><a href="#local-6989586621679218180"><span class="hs-identifier hs-var">sigBytes</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Address -&gt; Maybe Address -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Address -&gt; Maybe Address
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Address
+</span><a href="#local-6989586621679218181"><span class="hs-identifier hs-var">address</span></a></span><span>
+</span><span id="line-94"></span></pre></body></html>

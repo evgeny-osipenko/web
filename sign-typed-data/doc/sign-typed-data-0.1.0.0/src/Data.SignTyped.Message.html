@@ -1,0 +1,728 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.SignTyped.Message</span><span>
+</span><span id="line-2"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier">Message</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-3"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#makeMessage"><span class="hs-identifier">makeMessage</span></a></span><span>
+</span><span id="line-4"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#makeMessageWith"><span class="hs-identifier">makeMessageWith</span></a></span><span>
+</span><span id="line-5"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#messageChainId"><span class="hs-identifier">messageChainId</span></a></span><span>
+</span><span id="line-6"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#hashMessage"><span class="hs-identifier">hashMessage</span></a></span><span>
+</span><span id="line-7"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#signMessage"><span class="hs-identifier">signMessage</span></a></span><span>
+</span><span id="line-8"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#recoverMessageSigner"><span class="hs-identifier">recoverMessageSigner</span></a></span><span>
+</span><span id="line-9"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Monoid</span></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Class.html"><span class="hs-identifier">Data.SignTyped.Class</span></a></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Crypto.html"><span class="hs-identifier">Data.SignTyped.Crypto</span></a></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.EIP712Domain.html"><span class="hs-identifier">Data.SignTyped.EIP712Domain</span></a></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Hashing.html"><span class="hs-identifier">Data.SignTyped.Hashing</span></a></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Json.html"><span class="hs-identifier">Data.SignTyped.Json</span></a></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Structure.html"><span class="hs-identifier">Data.SignTyped.Structure</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html"><span class="hs-identifier">Data.SignTyped.Type.HList</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.SName.html"><span class="hs-identifier">Data.SignTyped.Type.SName</span></a></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.Some.html"><span class="hs-identifier">Data.SignTyped.Type.Some</span></a></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Util.html"><span class="hs-identifier">Data.SignTyped.Util</span></a></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Type.Equality</span></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Crypto.Secp256k1.Recovery</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">C</span></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Aeson</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Aeson</span></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Aeson.Encoding</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Aeson.Encoding</span></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Aeson.Types</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Aeson.Types</span></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.ByteString.Lazy</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">BS.Lazy</span></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Text</span></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text.Encoding</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Text.Encoding</span></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="annot"><span class="hs-comment">{-| A data structure that combines the message to sign, its domain and their type information.
+
+    It corresponds directly to the @TypedData@ parameter of the @eth_signTypedData@ request,
+and its JSON instances map directly to that.
+
+    As an emergent generalization, this structure allows the signable object to be any Solidity type
+with a defined @encodeData@, not just structs. This includes atomic types (such as @uint256@ and @bytes@) and
+arrays (e.g. @bytes[4][]@). -}</span></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">data</span><span> </span><span id="Message"><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-var">Message</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679220960"><span class="annot"><a href="#local-6989586621679220960"><span class="hs-identifier hs-type">ctx</span></a></span></span><span> </span><span id="local-6989586621679220961"><span class="annot"><a href="#local-6989586621679220961"><span class="hs-identifier hs-type">primRep</span></a></span></span><span class="hs-operator">.</span><span> </span><span id="Message"><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-var">Message</span></a></span></span><span>
+</span><span id="line-43"></span><span>    </span><span class="hs-special">{</span><span> </span><span id="messageTypeContext"><span class="annot"><span class="annottext">()
+</span><a href="Data.SignTyped.Message.html#messageTypeContext"><span class="hs-identifier hs-var hs-var">messageTypeContext</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.SignTyped.Structure.html#TypeContext"><span class="hs-identifier hs-type">TypeContext</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679220960"><span class="hs-identifier hs-type">ctx</span></a></span><span>
+</span><span id="line-44"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="messageDomainValue"><span class="annot"><span class="annottext">()
+</span><a href="Data.SignTyped.Message.html#messageDomainValue"><span class="hs-identifier hs-var hs-var">messageDomainValue</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.SignTyped.Structure.html#EthValue"><span class="hs-identifier hs-type">EthValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679220960"><span class="hs-identifier hs-type">ctx</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">'</span><span class="annot"><a href="Data.SignTyped.Structure.html#EthReprStruct"><span class="hs-identifier hs-type">EthReprStruct</span></a></span><span> </span><span class="annot"><a href="Data.SignTyped.EIP712Domain.html#EIP712DomainSymbol"><span class="hs-identifier hs-type">EIP712DomainSymbol</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="messagePrimaryType"><span class="annot"><span class="annottext">()
+</span><a href="Data.SignTyped.Message.html#messagePrimaryType"><span class="hs-identifier hs-var hs-var">messagePrimaryType</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.SignTyped.Structure.html#EthType"><span class="hs-identifier hs-type">EthType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679220961"><span class="hs-identifier hs-type">primRep</span></a></span><span>
+</span><span id="line-46"></span><span>    </span><span class="hs-special">,</span><span> </span><span id="messagePrimaryValue"><span class="annot"><span class="annottext">()
+</span><a href="Data.SignTyped.Message.html#messagePrimaryValue"><span class="hs-identifier hs-var hs-var">messagePrimaryValue</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.SignTyped.Structure.html#EthValue"><span class="hs-identifier hs-type">EthValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679220960"><span class="hs-identifier hs-type">ctx</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679220961"><span class="hs-identifier hs-type">primRep</span></a></span><span>
+</span><span id="line-47"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="annot"><span class="hs-comment">{-| Given a domain and a signable object, encode them into a `Message`.
+
+    This function uses a `SignableValueDefault` instance to define the exact encoding. To choose a different
+encoding, use `makeMessageWith`. -}</span></span><span>
+</span><span id="line-55"></span><span class="annot"><a href="Data.SignTyped.Message.html#makeMessage"><span class="hs-identifier hs-type">makeMessage</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-56"></span><span>    </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679220773"><span class="annot"><a href="#local-6989586621679220773"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span id="local-6989586621679220772"><span class="annot"><a href="#local-6989586621679220772"><span class="hs-identifier hs-type">ethType</span></a></span></span><span class="hs-operator">.</span><span>
+</span><span id="line-57"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Class.html#SignableValueDefault"><span class="hs-identifier hs-type">SignableValueDefault</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679220772"><span class="hs-identifier hs-type">ethType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679220773"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><a href="Data.SignTyped.EIP712Domain.html#SomeEIP712Domain"><span class="hs-identifier hs-type">SomeEIP712Domain</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><a href="#local-6989586621679220773"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-60"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span><span>
+</span><span id="line-61"></span><span id="makeMessage"><span class="annot"><span class="annottext">makeMessage :: forall a (ethType :: Symbol).
+SignableValueDefault ethType a =&gt;
+SomeEIP712Domain -&gt; a -&gt; Either String Message
+</span><a href="Data.SignTyped.Message.html#makeMessage"><span class="hs-identifier hs-var hs-var">makeMessage</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">SignableValueHandle a
+-&gt; SomeEIP712Domain -&gt; a -&gt; Either String Message
+forall a.
+SignableValueHandle a
+-&gt; SomeEIP712Domain -&gt; a -&gt; Either String Message
+</span><a href="Data.SignTyped.Message.html#makeMessageWith"><span class="hs-identifier hs-var">makeMessageWith</span></a></span><span> </span><span class="annot"><span class="annottext">SignableValueHandle a
+forall a (baseType :: Symbol).
+SignableValueDefault baseType a =&gt;
+SignableValueHandle a
+</span><a href="Data.SignTyped.Class.html#signableValueDefaultHandle"><span class="hs-identifier hs-var">signableValueDefaultHandle</span></a></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="annot"><span class="hs-comment">{-| Given a domain and a signable object, encode them into a `Message`.
+
+    This function uses an explicitly given `SignableValueHandle` to define the exact encoding. To use the default
+encoding for the given type, you can use `makeMessage` instead. -}</span></span><span>
+</span><span id="line-68"></span><span class="annot"><a href="Data.SignTyped.Message.html#makeMessageWith"><span class="hs-identifier hs-type">makeMessageWith</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-69"></span><span>    </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679220780"><span class="annot"><a href="#local-6989586621679220780"><span class="hs-identifier hs-type">a</span></a></span></span><span class="hs-operator">.</span><span>
+</span><span id="line-70"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Class.html#SignableValueHandle"><span class="hs-identifier hs-type">SignableValueHandle</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679220780"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-71"></span><span>    </span><span class="annot"><a href="Data.SignTyped.EIP712Domain.html#SomeEIP712Domain"><span class="hs-identifier hs-type">SomeEIP712Domain</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-72"></span><span>    </span><span class="annot"><a href="#local-6989586621679220780"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-73"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span><span>
+</span><span id="line-74"></span><span id="makeMessageWith"><span class="annot"><span class="annottext">makeMessageWith :: forall a.
+SignableValueHandle a
+-&gt; SomeEIP712Domain -&gt; a -&gt; Either String Message
+</span><a href="Data.SignTyped.Message.html#makeMessageWith"><span class="hs-identifier hs-var hs-var">makeMessageWith</span></a></span></span><span> </span><span id="local-6989586621679220971"><span class="annot"><span class="annottext">SignableValueHandle a
+</span><a href="#local-6989586621679220971"><span class="hs-identifier hs-var">messageHandle</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.EIP712Domain.html#SomeEIP712Domain"><span class="hs-identifier hs-type">SomeEIP712Domain</span></a></span><span> </span><span class="hs-glyph">@</span><span id="local-6989586621679220978"><span class="annot"><a href="#local-6989586621679220978"><span class="hs-identifier hs-type hs-type">opt</span></a></span></span><span> </span><span id="local-6989586621679220979"><span class="annot"><span class="annottext">EIP712Domain opt
+</span><a href="#local-6989586621679220979"><span class="hs-identifier hs-var">domain</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679220980"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679220980"><span class="hs-identifier hs-var">message</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-75"></span><span>    </span><span class="annot"><span class="annottext">Some TypeContext
+-&gt; (forall {t :: TMap Symbol [EthRepr]}.
+    TypeContext t -&gt; Either String Message)
+-&gt; Either String Message
+forall {k} (f :: k -&gt; *) r.
+Some f -&gt; (forall (t :: k). f t -&gt; r) -&gt; r
+</span><a href="Data.SignTyped.Type.Some.html#withSome"><span class="hs-identifier hs-var">withSome</span></a></span><span> </span><span class="annot"><span class="annottext">Some TypeContext
+</span><a href="#local-6989586621679220982"><span class="hs-identifier hs-var">joinedTypeContext</span></a></span><span> </span><span class="annot"><span class="annottext">((forall {t :: TMap Symbol [EthRepr]}.
+  TypeContext t -&gt; Either String Message)
+ -&gt; Either String Message)
+-&gt; (forall {t :: TMap Symbol [EthRepr]}.
+    TypeContext t -&gt; Either String Message)
+-&gt; Either String Message
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679220983"><span class="annot"><span class="annottext">TypeContext t
+</span><a href="#local-6989586621679220983"><span class="hs-identifier hs-var">tc</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-76"></span><span>    </span><span class="annot"><span class="annottext">Some EthType
+-&gt; (forall {t :: EthRepr}. EthType t -&gt; Either String Message)
+-&gt; Either String Message
+forall {k} (f :: k -&gt; *) r.
+Some f -&gt; (forall (t :: k). f t -&gt; r) -&gt; r
+</span><a href="Data.SignTyped.Type.Some.html#withSome"><span class="hs-identifier hs-var">withSome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SignableValueHandle a -&gt; Some EthType
+forall a. SignableValueHandle a -&gt; Some EthType
+</span><a href="Data.SignTyped.Class.html#signableValueEthType"><span class="hs-identifier hs-var">signableValueEthType</span></a></span><span> </span><span class="annot"><span class="annottext">SignableValueHandle a
+</span><a href="#local-6989586621679220971"><span class="hs-identifier hs-var">messageHandle</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((forall {t :: EthRepr}. EthType t -&gt; Either String Message)
+ -&gt; Either String Message)
+-&gt; (forall {t :: EthRepr}. EthType t -&gt; Either String Message)
+-&gt; Either String Message
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679220990"><span class="annot"><span class="annottext">EthType t
+</span><a href="#local-6989586621679220990"><span class="hs-identifier hs-var">messageEthType</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-77"></span><span>    </span><span class="annot"><span class="annottext">TypeContext t -&gt; Embed t Message -&gt; Either String Message
+forall (ctx :: TMap Symbol [EthRepr]) a.
+TypeContext ctx -&gt; Embed ctx a -&gt; Either String a
+</span><a href="Data.SignTyped.Class.html#runEmbed"><span class="hs-identifier hs-var">runEmbed</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext t
+</span><a href="#local-6989586621679220983"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">(Embed t Message -&gt; Either String Message)
+-&gt; Embed t Message -&gt; Either String Message
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-78"></span><span>        </span><span id="local-6989586621679220992"><span class="annot"><span class="annottext">EthValue t ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679220992"><span class="hs-identifier hs-var">domainEthValue</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">SignableValueHandle (EIP712Domain opt)
+-&gt; forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+   EthType rep -&gt; EIP712Domain opt -&gt; Embed ctx (EthValue ctx rep)
+forall a.
+SignableValueHandle a
+-&gt; forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+   EthType rep -&gt; a -&gt; Embed ctx (EthValue ctx rep)
+</span><a href="Data.SignTyped.Class.html#signableValueEmbed"><span class="hs-identifier hs-var">signableValueEmbed</span></a></span><span> </span><span class="annot"><span class="annottext">SignableValueHandle (EIP712Domain opt)
+</span><a href="#local-6989586621679220994"><span class="hs-identifier hs-var">domainHandle</span></a></span><span> </span><span class="annot"><span class="annottext">EthType ('EthReprStruct EIP712DomainSymbol)
+</span><a href="Data.SignTyped.EIP712Domain.html#eip712DomainEthType"><span class="hs-identifier hs-var">eip712DomainEthType</span></a></span><span> </span><span class="annot"><span class="annottext">EIP712Domain opt
+</span><a href="#local-6989586621679220979"><span class="hs-identifier hs-var">domain</span></a></span><span>
+</span><span id="line-79"></span><span>        </span><span id="local-6989586621679220996"><span class="annot"><span class="annottext">EthValue t t
+</span><a href="#local-6989586621679220996"><span class="hs-identifier hs-var">messageEthValue</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">SignableValueHandle a
+-&gt; forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+   EthType rep -&gt; a -&gt; Embed ctx (EthValue ctx rep)
+forall a.
+SignableValueHandle a
+-&gt; forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+   EthType rep -&gt; a -&gt; Embed ctx (EthValue ctx rep)
+</span><a href="Data.SignTyped.Class.html#signableValueEmbed"><span class="hs-identifier hs-var">signableValueEmbed</span></a></span><span> </span><span class="annot"><span class="annottext">SignableValueHandle a
+</span><a href="#local-6989586621679220971"><span class="hs-identifier hs-var">messageHandle</span></a></span><span> </span><span class="annot"><span class="annottext">EthType t
+</span><a href="#local-6989586621679220990"><span class="hs-identifier hs-var">messageEthType</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679220980"><span class="hs-identifier hs-var">message</span></a></span><span>
+</span><span id="line-80"></span><span>        </span><span class="annot"><span class="annottext">Message -&gt; Embed t Message
+forall a. a -&gt; Embed t a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Message -&gt; Embed t Message) -&gt; Message -&gt; Embed t Message
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TypeContext t
+-&gt; EthValue t ('EthReprStruct EIP712DomainSymbol)
+-&gt; EthType t
+-&gt; EthValue t t
+-&gt; Message
+forall (ctx :: TMap Symbol [EthRepr]) (primRep :: EthRepr).
+TypeContext ctx
+-&gt; EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+-&gt; EthType primRep
+-&gt; EthValue ctx primRep
+-&gt; Message
+</span><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-var">Message</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext t
+</span><a href="#local-6989586621679220983"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue t ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679220992"><span class="hs-identifier hs-var">domainEthValue</span></a></span><span> </span><span class="annot"><span class="annottext">EthType t
+</span><a href="#local-6989586621679220990"><span class="hs-identifier hs-var">messageEthType</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue t t
+</span><a href="#local-6989586621679220996"><span class="hs-identifier hs-var">messageEthValue</span></a></span><span>
+</span><span id="line-81"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-82"></span><span>    </span><span id="local-6989586621679220982"><span class="annot"><span class="annottext">joinedTypeContext :: Some TypeContext
+</span><a href="#local-6989586621679220982"><span class="hs-identifier hs-var hs-var">joinedTypeContext</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-83"></span><span>        </span><span class="annot"><span class="annottext">SignableValueHandle a -&gt; Some TypeContext
+forall a. SignableValueHandle a -&gt; Some TypeContext
+</span><a href="Data.SignTyped.Class.html#signableValueTypeContext"><span class="hs-identifier hs-var">signableValueTypeContext</span></a></span><span> </span><span class="annot"><span class="annottext">SignableValueHandle a
+</span><a href="#local-6989586621679220971"><span class="hs-identifier hs-var">messageHandle</span></a></span><span>
+</span><span id="line-84"></span><span>      </span><span class="annot"><span class="annottext">Some TypeContext -&gt; Some TypeContext -&gt; Some TypeContext
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span>
+</span><span id="line-85"></span><span>        </span><span class="annot"><span class="annottext">SignableValueHandle (EIP712Domain opt) -&gt; Some TypeContext
+forall a. SignableValueHandle a -&gt; Some TypeContext
+</span><a href="Data.SignTyped.Class.html#signableValueTypeContext"><span class="hs-identifier hs-var">signableValueTypeContext</span></a></span><span> </span><span class="annot"><span class="annottext">SignableValueHandle (EIP712Domain opt)
+</span><a href="#local-6989586621679220994"><span class="hs-identifier hs-var">domainHandle</span></a></span><span>
+</span><span id="line-86"></span><span>    </span><span id="local-6989586621679220994"><span class="annot"><span class="annottext">domainHandle :: SignableValueHandle (EIP712Domain opt)
+</span><a href="#local-6989586621679220994"><span class="hs-identifier hs-var hs-var">domainHandle</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-87"></span><span>        </span><span class="annot"><span class="annottext">forall (baseType :: Symbol) a.
+SignableValue baseType a =&gt;
+SignableValueHandle a
+</span><a href="Data.SignTyped.Class.html#signableValueHandle"><span class="hs-identifier hs-var">signableValueHandle</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Data.SignTyped.EIP712Domain.html#EIP712DomainSymbol"><span class="hs-identifier hs-type">EIP712DomainSymbol</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.EIP712Domain.html#EIP712Domain"><span class="hs-identifier hs-type">EIP712Domain</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679220978"><span class="hs-identifier hs-type">opt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span>
+</span><span id="line-91"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679221001"><span id="local-6989586621679221005"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-92"></span><span>    </span><span id="local-6989586621679221010"><span class="annot"><span class="annottext">showsPrec :: Int -&gt; Message -&gt; ShowS
+</span><a href="#local-6989586621679221010"><span class="hs-identifier hs-var hs-var hs-var hs-var">showsPrec</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679221012"><span class="annot"><span class="annottext">Message
+</span><a href="#local-6989586621679221012"><span class="hs-identifier hs-var">message</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-93"></span><span>        </span><span class="annot"><span class="annottext">String -&gt; ShowS
+</span><span class="hs-identifier hs-var">showString</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;&lt;Message: &quot;</span></span><span> </span><span class="annot"><span class="annottext">ShowS -&gt; ShowS -&gt; ShowS
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span>
+</span><span id="line-94"></span><span>        </span><span class="annot"><span class="annottext">String -&gt; ShowS
+</span><span class="hs-identifier hs-var">showString</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">Text.unpack</span></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; String) -&gt; Text -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Text
+</span><span class="hs-identifier hs-var">Text.Encoding.decodeUtf8</span></span><span> </span><span class="annot"><span class="annottext">(ByteString -&gt; Text) -&gt; ByteString -&gt; Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString
+</span><span class="hs-identifier hs-var">BS.Lazy.toStrict</span></span><span> </span><span class="annot"><span class="annottext">(ByteString -&gt; ByteString) -&gt; ByteString -&gt; ByteString
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Message -&gt; ByteString
+forall a. ToJSON a =&gt; a -&gt; ByteString
+</span><span class="hs-identifier hs-var">Aeson.encode</span></span><span> </span><span class="annot"><span class="annottext">Message
+</span><a href="#local-6989586621679221012"><span class="hs-identifier hs-var">message</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ShowS -&gt; ShowS -&gt; ShowS
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span>
+</span><span id="line-95"></span><span>        </span><span class="annot"><span class="annottext">String -&gt; ShowS
+</span><span class="hs-identifier hs-var">showString</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;&gt;&quot;</span></span><span>
+</span><span id="line-96"></span><span>
+</span><span id="line-97"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679221021"><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-98"></span><span>    </span><span id="local-6989586621679221025"><span class="annot"><span class="annottext">Message
+</span><a href="#local-6989586621679221025"><span class="hs-identifier hs-var">msg1</span></a></span></span><span> </span><span id="local-6989586621679221026"><span class="annot"><span class="annottext">== :: Message -&gt; Message -&gt; Bool
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">==</span></span></span><span> </span><span id="local-6989586621679221027"><span class="annot"><span class="annottext">Message
+</span><a href="#local-6989586621679221027"><span class="hs-identifier hs-var">msg2</span></a></span></span><span>
+</span><span id="line-99"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span><span> </span><span id="local-6989586621679221028"><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221028"><span class="hs-identifier hs-var">tc1</span></a></span></span><span> </span><span id="local-6989586621679221029"><span class="annot"><span class="annottext">EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679221029"><span class="hs-identifier hs-var">domainEthValue1</span></a></span></span><span> </span><span id="local-6989586621679221030"><span class="annot"><span class="annottext">EthType primRep
+</span><a href="#local-6989586621679221030"><span class="hs-identifier hs-var">messageEthType1</span></a></span></span><span> </span><span id="local-6989586621679221031"><span class="annot"><span class="annottext">EthValue ctx primRep
+</span><a href="#local-6989586621679221031"><span class="hs-identifier hs-var">messageEthValue1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Message
+</span><a href="#local-6989586621679221025"><span class="hs-identifier hs-var">msg1</span></a></span><span>
+</span><span id="line-100"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span><span> </span><span id="local-6989586621679221034"><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221034"><span class="hs-identifier hs-var">tc2</span></a></span></span><span> </span><span id="local-6989586621679221035"><span class="annot"><span class="annottext">EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679221035"><span class="hs-identifier hs-var">domainEthValue2</span></a></span></span><span> </span><span id="local-6989586621679221036"><span class="annot"><span class="annottext">EthType primRep
+</span><a href="#local-6989586621679221036"><span class="hs-identifier hs-var">messageEthType2</span></a></span></span><span> </span><span id="local-6989586621679221037"><span class="annot"><span class="annottext">EthValue ctx primRep
+</span><a href="#local-6989586621679221037"><span class="hs-identifier hs-var">messageEthValue2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Message
+</span><a href="#local-6989586621679221027"><span class="hs-identifier hs-var">msg2</span></a></span><span>
+</span><span id="line-101"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="annottext">ctx :~: ctx
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">TypeContext ctx -&gt; TypeContext ctx -&gt; Maybe (ctx :~: ctx)
+forall {k} (f :: k -&gt; *) (a :: k) (b :: k).
+TestEquality f =&gt;
+f a -&gt; f b -&gt; Maybe (a :~: b)
+forall (a :: TMap Symbol [EthRepr]) (b :: TMap Symbol [EthRepr]).
+TypeContext a -&gt; TypeContext b -&gt; Maybe (a :~: b)
+</span><span class="hs-identifier hs-var">testEquality</span></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221028"><span class="hs-identifier hs-var">tc1</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221034"><span class="hs-identifier hs-var">tc2</span></a></span><span>
+</span><span id="line-102"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+-&gt; EthType ('EthReprStruct EIP712DomainSymbol)
+-&gt; EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+-&gt; EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+-&gt; Bool
+forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+TypeContext ctx
+-&gt; EthType rep -&gt; EthValue ctx rep -&gt; EthValue ctx rep -&gt; Bool
+</span><a href="Data.SignTyped.Structure.html#eqEthValue"><span class="hs-identifier hs-var">eqEthValue</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221028"><span class="hs-identifier hs-var">tc1</span></a></span><span> </span><span class="annot"><span class="annottext">EthType ('EthReprStruct EIP712DomainSymbol)
+</span><a href="Data.SignTyped.EIP712Domain.html#eip712DomainEthType"><span class="hs-identifier hs-var">eip712DomainEthType</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679221029"><span class="hs-identifier hs-var">domainEthValue1</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679221035"><span class="hs-identifier hs-var">domainEthValue2</span></a></span><span>
+</span><span id="line-103"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="annottext">primRep :~: primRep
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">EthType primRep -&gt; EthType primRep -&gt; Maybe (primRep :~: primRep)
+forall {k} (f :: k -&gt; *) (a :: k) (b :: k).
+TestEquality f =&gt;
+f a -&gt; f b -&gt; Maybe (a :~: b)
+forall (a :: EthRepr) (b :: EthRepr).
+EthType a -&gt; EthType b -&gt; Maybe (a :~: b)
+</span><span class="hs-identifier hs-var">testEquality</span></span><span> </span><span class="annot"><span class="annottext">EthType primRep
+</span><a href="#local-6989586621679221030"><span class="hs-identifier hs-var">messageEthType1</span></a></span><span> </span><span class="annot"><span class="annottext">EthType primRep
+</span><a href="#local-6989586621679221036"><span class="hs-identifier hs-var">messageEthType2</span></a></span><span>
+</span><span id="line-104"></span><span>        </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+-&gt; EthType primRep
+-&gt; EthValue ctx primRep
+-&gt; EthValue ctx primRep
+-&gt; Bool
+forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+TypeContext ctx
+-&gt; EthType rep -&gt; EthValue ctx rep -&gt; EthValue ctx rep -&gt; Bool
+</span><a href="Data.SignTyped.Structure.html#eqEthValue"><span class="hs-identifier hs-var">eqEthValue</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221028"><span class="hs-identifier hs-var">tc1</span></a></span><span> </span><span class="annot"><span class="annottext">EthType primRep
+</span><a href="#local-6989586621679221030"><span class="hs-identifier hs-var">messageEthType1</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue ctx primRep
+</span><a href="#local-6989586621679221031"><span class="hs-identifier hs-var">messageEthValue1</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue ctx primRep
+EthValue ctx primRep
+</span><a href="#local-6989586621679221037"><span class="hs-identifier hs-var">messageEthValue2</span></a></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-105"></span><span>            </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-106"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-107"></span><span>            </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679221048"><span id="local-6989586621679221051"><span class="annot"><span class="hs-identifier hs-type">Aeson.ToJSON</span></span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-110"></span><span>    </span><span id="local-6989586621679221054"><span class="annot"><span class="annottext">toJSON :: Message -&gt; Value
+</span><a href="#local-6989586621679221054"><span class="hs-identifier hs-var hs-var hs-var hs-var">toJSON</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span><span> </span><span id="local-6989586621679221081"><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221081"><span class="hs-identifier hs-var">tc</span></a></span></span><span> </span><span id="local-6989586621679221082"><span class="annot"><span class="annottext">EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679221082"><span class="hs-identifier hs-var">domainEthValue</span></a></span></span><span> </span><span id="local-6989586621679221083"><span class="annot"><span class="annottext">EthType primRep
+</span><a href="#local-6989586621679221083"><span class="hs-identifier hs-var">messageEthType</span></a></span></span><span> </span><span id="local-6989586621679221084"><span class="annot"><span class="annottext">EthValue ctx primRep
+</span><a href="#local-6989586621679221084"><span class="hs-identifier hs-var">messageEthValue</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-111"></span><span>        </span><span class="annot"><span class="annottext">[Pair] -&gt; Value
+</span><span class="hs-identifier hs-var">Aeson.object</span></span><span>
+</span><span id="line-112"></span><span>            </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;types&quot;</span></span><span> </span><span class="annot"><span class="annottext">Key -&gt; UnmarkedTypeContext -&gt; Pair
+forall kv v. (KeyValue kv, ToJSON v) =&gt; Key -&gt; v -&gt; kv
+forall v. ToJSON v =&gt; Key -&gt; v -&gt; Pair
+</span><span class="hs-operator hs-var">Aeson..=</span></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx -&gt; UnmarkedTypeContext
+forall (ctx :: TMap Symbol [EthRepr]).
+TypeContext ctx -&gt; UnmarkedTypeContext
+</span><a href="Data.SignTyped.Json.html#toUnmarkedTypeContext"><span class="hs-identifier hs-var">toUnmarkedTypeContext</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221081"><span class="hs-identifier hs-var">tc</span></a></span><span>
+</span><span id="line-113"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;primaryType&quot;</span></span><span> </span><span class="annot"><span class="annottext">Key -&gt; Text -&gt; Pair
+forall kv v. (KeyValue kv, ToJSON v) =&gt; Key -&gt; v -&gt; kv
+forall v. ToJSON v =&gt; Key -&gt; v -&gt; Pair
+</span><span class="hs-operator hs-var">Aeson..=</span></span><span> </span><span class="annot"><span class="annottext">EthType primRep -&gt; Text
+forall (rep :: EthRepr). EthType rep -&gt; Text
+</span><a href="Data.SignTyped.Json.html#toUnmarkedEthType"><span class="hs-identifier hs-var">toUnmarkedEthType</span></a></span><span> </span><span class="annot"><span class="annottext">EthType primRep
+</span><a href="#local-6989586621679221083"><span class="hs-identifier hs-var">messageEthType</span></a></span><span>
+</span><span id="line-114"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;domain&quot;</span></span><span> </span><span class="annot"><span class="annottext">Key -&gt; Value -&gt; Pair
+forall kv v. (KeyValue kv, ToJSON v) =&gt; Key -&gt; v -&gt; kv
+forall v. ToJSON v =&gt; Key -&gt; v -&gt; Pair
+</span><span class="hs-operator hs-var">Aeson..=</span></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+-&gt; EthType ('EthReprStruct EIP712DomainSymbol)
+-&gt; EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+-&gt; Value
+forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+TypeContext ctx -&gt; EthType rep -&gt; EthValue ctx rep -&gt; Value
+</span><a href="Data.SignTyped.Json.html#ethValueToJSON"><span class="hs-identifier hs-var">ethValueToJSON</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221081"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">EthType ('EthReprStruct EIP712DomainSymbol)
+</span><a href="Data.SignTyped.EIP712Domain.html#eip712DomainEthType"><span class="hs-identifier hs-var">eip712DomainEthType</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679221082"><span class="hs-identifier hs-var">domainEthValue</span></a></span><span>
+</span><span id="line-115"></span><span>            </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;message&quot;</span></span><span> </span><span class="annot"><span class="annottext">Key -&gt; Value -&gt; Pair
+forall kv v. (KeyValue kv, ToJSON v) =&gt; Key -&gt; v -&gt; kv
+forall v. ToJSON v =&gt; Key -&gt; v -&gt; Pair
+</span><span class="hs-operator hs-var">Aeson..=</span></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx -&gt; EthType primRep -&gt; EthValue ctx primRep -&gt; Value
+forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+TypeContext ctx -&gt; EthType rep -&gt; EthValue ctx rep -&gt; Value
+</span><a href="Data.SignTyped.Json.html#ethValueToJSON"><span class="hs-identifier hs-var">ethValueToJSON</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221081"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">EthType primRep
+</span><a href="#local-6989586621679221083"><span class="hs-identifier hs-var">messageEthType</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue ctx primRep
+</span><a href="#local-6989586621679221084"><span class="hs-identifier hs-var">messageEthValue</span></a></span><span>
+</span><span id="line-116"></span><span>            </span><span class="hs-special">]</span><span>
+</span><span id="line-117"></span><span>    </span><span id="local-6989586621679221090"><span class="annot"><span class="annottext">toEncoding :: Message -&gt; Encoding
+</span><a href="#local-6989586621679221090"><span class="hs-identifier hs-var hs-var hs-var hs-var">toEncoding</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span><span> </span><span id="local-6989586621679221108"><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221108"><span class="hs-identifier hs-var">tc</span></a></span></span><span> </span><span id="local-6989586621679221109"><span class="annot"><span class="annottext">EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679221109"><span class="hs-identifier hs-var">domainEthValue</span></a></span></span><span> </span><span id="local-6989586621679221110"><span class="annot"><span class="annottext">EthType primRep
+</span><a href="#local-6989586621679221110"><span class="hs-identifier hs-var">messageEthType</span></a></span></span><span> </span><span id="local-6989586621679221111"><span class="annot"><span class="annottext">EthValue ctx primRep
+</span><a href="#local-6989586621679221111"><span class="hs-identifier hs-var">messageEthValue</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-118"></span><span>        </span><span class="annot"><span class="annottext">Series -&gt; Encoding
+</span><span class="hs-identifier hs-var">Aeson.Encoding.pairs</span></span><span> </span><span class="annot"><span class="annottext">(Series -&gt; Encoding) -&gt; Series -&gt; Encoding
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-119"></span><span>            </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;types&quot;</span></span><span> </span><span class="annot"><span class="annottext">Key -&gt; UnmarkedTypeContext -&gt; Series
+forall kv v. (KeyValue kv, ToJSON v) =&gt; Key -&gt; v -&gt; kv
+forall v. ToJSON v =&gt; Key -&gt; v -&gt; Series
+</span><span class="hs-operator hs-var">Aeson..=</span></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx -&gt; UnmarkedTypeContext
+forall (ctx :: TMap Symbol [EthRepr]).
+TypeContext ctx -&gt; UnmarkedTypeContext
+</span><a href="Data.SignTyped.Json.html#toUnmarkedTypeContext"><span class="hs-identifier hs-var">toUnmarkedTypeContext</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221108"><span class="hs-identifier hs-var">tc</span></a></span><span>
+</span><span id="line-120"></span><span>          </span><span class="annot"><span class="annottext">Series -&gt; Series -&gt; Series
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span>
+</span><span id="line-121"></span><span>            </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;primaryType&quot;</span></span><span> </span><span class="annot"><span class="annottext">Key -&gt; Text -&gt; Series
+forall kv v. (KeyValue kv, ToJSON v) =&gt; Key -&gt; v -&gt; kv
+forall v. ToJSON v =&gt; Key -&gt; v -&gt; Series
+</span><span class="hs-operator hs-var">Aeson..=</span></span><span> </span><span class="annot"><span class="annottext">EthType primRep -&gt; Text
+forall (rep :: EthRepr). EthType rep -&gt; Text
+</span><a href="Data.SignTyped.Json.html#toUnmarkedEthType"><span class="hs-identifier hs-var">toUnmarkedEthType</span></a></span><span> </span><span class="annot"><span class="annottext">EthType primRep
+</span><a href="#local-6989586621679221110"><span class="hs-identifier hs-var">messageEthType</span></a></span><span>
+</span><span id="line-122"></span><span>          </span><span class="annot"><span class="annottext">Series -&gt; Series -&gt; Series
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span>
+</span><span id="line-123"></span><span>            </span><span class="annot"><span class="annottext">Key -&gt; Encoding -&gt; Series
+</span><span class="hs-identifier hs-var">Aeson.Encoding.pair</span></span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;domain&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeContext ctx
+-&gt; EthType ('EthReprStruct EIP712DomainSymbol)
+-&gt; EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+-&gt; Encoding
+forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+TypeContext ctx -&gt; EthType rep -&gt; EthValue ctx rep -&gt; Encoding
+</span><a href="Data.SignTyped.Json.html#ethValueToEncoding"><span class="hs-identifier hs-var">ethValueToEncoding</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221108"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">EthType ('EthReprStruct EIP712DomainSymbol)
+</span><a href="Data.SignTyped.EIP712Domain.html#eip712DomainEthType"><span class="hs-identifier hs-var">eip712DomainEthType</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679221109"><span class="hs-identifier hs-var">domainEthValue</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-124"></span><span>          </span><span class="annot"><span class="annottext">Series -&gt; Series -&gt; Series
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span>
+</span><span id="line-125"></span><span>            </span><span class="annot"><span class="annottext">Key -&gt; Encoding -&gt; Series
+</span><span class="hs-identifier hs-var">Aeson.Encoding.pair</span></span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;message&quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeContext ctx
+-&gt; EthType primRep -&gt; EthValue ctx primRep -&gt; Encoding
+forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+TypeContext ctx -&gt; EthType rep -&gt; EthValue ctx rep -&gt; Encoding
+</span><a href="Data.SignTyped.Json.html#ethValueToEncoding"><span class="hs-identifier hs-var">ethValueToEncoding</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221108"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">EthType primRep
+</span><a href="#local-6989586621679221110"><span class="hs-identifier hs-var">messageEthType</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue ctx primRep
+</span><a href="#local-6989586621679221111"><span class="hs-identifier hs-var">messageEthValue</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-126"></span><span>
+</span><span id="line-127"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679221117"><span class="annot"><span class="hs-identifier hs-type">Aeson.FromJSON</span></span><span> </span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-128"></span><span>    </span><span id="local-6989586621679221136"><span class="annot"><span class="annottext">parseJSON :: Value -&gt; Parser Message
+</span><a href="#local-6989586621679221136"><span class="hs-identifier hs-var hs-var hs-var hs-var">parseJSON</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; (Object -&gt; Parser Message) -&gt; Value -&gt; Parser Message
+forall a. String -&gt; (Object -&gt; Parser a) -&gt; Value -&gt; Parser a
+</span><span class="hs-identifier hs-var">Aeson.withObject</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;EIP-712 Sign Request&quot;</span></span><span> </span><span class="annot"><span class="annottext">((Object -&gt; Parser Message) -&gt; Value -&gt; Parser Message)
+-&gt; (Object -&gt; Parser Message) -&gt; Value -&gt; Parser Message
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679221139"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679221139"><span class="hs-identifier hs-var">obj</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-129"></span><span>        </span><span class="annot"><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-type">Some</span></a></span><span> </span><span id="local-6989586621679221150"><span class="annot"><span class="annottext">TypeContext t
+</span><a href="#local-6989586621679221150"><span class="hs-identifier hs-var">tc</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(UnmarkedTypeContext -&gt; Parser (Some TypeContext))
+-&gt; Object -&gt; Key -&gt; Parser (Some TypeContext)
+forall t b.
+FromJSON t =&gt;
+(t -&gt; Parser b) -&gt; Object -&gt; Key -&gt; Parser b
+</span><a href="Data.SignTyped.Message.html#parseMemberWith"><span class="hs-identifier hs-var">parseMemberWith</span></a></span><span> </span><span class="annot"><span class="annottext">UnmarkedTypeContext -&gt; Parser (Some TypeContext)
+</span><a href="Data.SignTyped.Json.html#parseUnmarkedTypeContext"><span class="hs-identifier hs-var">parseUnmarkedTypeContext</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679221139"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;types&quot;</span></span><span>
+</span><span id="line-130"></span><span>        </span><span id="local-6989586621679221153"><span class="annot"><span class="annottext">EthValue t ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679221153"><span class="hs-identifier hs-var">domainEthValue</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Value -&gt; Parser (EthValue t ('EthReprStruct EIP712DomainSymbol)))
+-&gt; Object
+-&gt; Key
+-&gt; Parser (EthValue t ('EthReprStruct EIP712DomainSymbol))
+forall t b.
+FromJSON t =&gt;
+(t -&gt; Parser b) -&gt; Object -&gt; Key -&gt; Parser b
+</span><a href="Data.SignTyped.Message.html#parseMemberWith"><span class="hs-identifier hs-var">parseMemberWith</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeContext t
+-&gt; EthType ('EthReprStruct EIP712DomainSymbol)
+-&gt; Value
+-&gt; Parser (EthValue t ('EthReprStruct EIP712DomainSymbol))
+forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+TypeContext ctx
+-&gt; EthType rep -&gt; Value -&gt; Parser (EthValue ctx rep)
+</span><a href="Data.SignTyped.Json.html#ethValueParseJSON"><span class="hs-identifier hs-var">ethValueParseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext t
+</span><a href="#local-6989586621679221150"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">EthType ('EthReprStruct EIP712DomainSymbol)
+</span><a href="Data.SignTyped.EIP712Domain.html#eip712DomainEthType"><span class="hs-identifier hs-var">eip712DomainEthType</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679221139"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;domain&quot;</span></span><span>
+</span><span id="line-131"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Set Text
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-type">Some</span></a></span><span> </span><span id="local-6989586621679221160"><span class="annot"><span class="annottext">EthType t
+</span><a href="#local-6989586621679221160"><span class="hs-identifier hs-var">messageEthType</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Text -&gt; Parser (Set Text, Some EthType))
+-&gt; Object -&gt; Key -&gt; Parser (Set Text, Some EthType)
+forall t b.
+FromJSON t =&gt;
+(t -&gt; Parser b) -&gt; Object -&gt; Key -&gt; Parser b
+</span><a href="Data.SignTyped.Message.html#parseMemberWith"><span class="hs-identifier hs-var">parseMemberWith</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Parser (Set Text, Some EthType)
+</span><a href="Data.SignTyped.Json.html#parseUnmarkedEthType"><span class="hs-identifier hs-var">parseUnmarkedEthType</span></a></span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679221139"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;primaryType&quot;</span></span><span>
+</span><span id="line-132"></span><span>        </span><span id="local-6989586621679221162"><span class="annot"><span class="annottext">EthValue t t
+</span><a href="#local-6989586621679221162"><span class="hs-identifier hs-var">messageEthValue</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Value -&gt; Parser (EthValue t t))
+-&gt; Object -&gt; Key -&gt; Parser (EthValue t t)
+forall t b.
+FromJSON t =&gt;
+(t -&gt; Parser b) -&gt; Object -&gt; Key -&gt; Parser b
+</span><a href="Data.SignTyped.Message.html#parseMemberWith"><span class="hs-identifier hs-var">parseMemberWith</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeContext t -&gt; EthType t -&gt; Value -&gt; Parser (EthValue t t)
+forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+TypeContext ctx
+-&gt; EthType rep -&gt; Value -&gt; Parser (EthValue ctx rep)
+</span><a href="Data.SignTyped.Json.html#ethValueParseJSON"><span class="hs-identifier hs-var">ethValueParseJSON</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext t
+</span><a href="#local-6989586621679221150"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">EthType t
+</span><a href="#local-6989586621679221160"><span class="hs-identifier hs-var">messageEthType</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679221139"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Key
+</span><span class="hs-string">&quot;message&quot;</span></span><span>
+</span><span id="line-133"></span><span>        </span><span class="annot"><span class="annottext">Message -&gt; Parser Message
+forall a. a -&gt; Parser a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Message -&gt; Parser Message) -&gt; Message -&gt; Parser Message
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TypeContext t
+-&gt; EthValue t ('EthReprStruct EIP712DomainSymbol)
+-&gt; EthType t
+-&gt; EthValue t t
+-&gt; Message
+forall (ctx :: TMap Symbol [EthRepr]) (primRep :: EthRepr).
+TypeContext ctx
+-&gt; EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+-&gt; EthType primRep
+-&gt; EthValue ctx primRep
+-&gt; Message
+</span><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-var">Message</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext t
+</span><a href="#local-6989586621679221150"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue t ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679221153"><span class="hs-identifier hs-var">domainEthValue</span></a></span><span> </span><span class="annot"><span class="annottext">EthType t
+</span><a href="#local-6989586621679221160"><span class="hs-identifier hs-var">messageEthType</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue t t
+</span><a href="#local-6989586621679221162"><span class="hs-identifier hs-var">messageEthValue</span></a></span><span>
+</span><span id="line-134"></span><span>
+</span><span id="line-135"></span><span id="local-6989586621679220887"><span id="local-6989586621679220888"><span class="annot"><a href="Data.SignTyped.Message.html#parseMemberWith"><span class="hs-identifier hs-type">parseMemberWith</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-136"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Aeson.FromJSON</span></span><span> </span><span class="annot"><a href="#local-6989586621679220887"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-137"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679220887"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Aeson.Types.Parser</span></span><span> </span><span class="annot"><a href="#local-6989586621679220888"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-138"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Aeson.Object</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-139"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Aeson.Key</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-140"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Aeson.Types.Parser</span></span><span> </span><span class="annot"><a href="#local-6989586621679220888"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-141"></span><span id="parseMemberWith"><span class="annot"><span class="annottext">parseMemberWith :: forall t b.
+FromJSON t =&gt;
+(t -&gt; Parser b) -&gt; Object -&gt; Key -&gt; Parser b
+</span><a href="Data.SignTyped.Message.html#parseMemberWith"><span class="hs-identifier hs-var hs-var">parseMemberWith</span></a></span></span><span> </span><span id="local-6989586621679221166"><span class="annot"><span class="annottext">t -&gt; Parser b
+</span><a href="#local-6989586621679221166"><span class="hs-identifier hs-var">fn</span></a></span></span><span> </span><span id="local-6989586621679221167"><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679221167"><span class="hs-identifier hs-var">obj</span></a></span></span><span> </span><span id="local-6989586621679221168"><span class="annot"><span class="annottext">Key
+</span><a href="#local-6989586621679221168"><span class="hs-identifier hs-var">key</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-142"></span><span>    </span><span id="local-6989586621679221169"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679221169"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Object
+</span><a href="#local-6989586621679221167"><span class="hs-identifier hs-var">obj</span></a></span><span> </span><span class="annot"><span class="annottext">Object -&gt; Key -&gt; Parser t
+forall a. FromJSON a =&gt; Object -&gt; Key -&gt; Parser a
+</span><span class="hs-operator hs-var">Aeson..:</span></span><span> </span><span class="annot"><span class="annottext">Key
+</span><a href="#local-6989586621679221168"><span class="hs-identifier hs-var">key</span></a></span><span>
+</span><span id="line-143"></span><span>    </span><span class="annot"><span class="annottext">t -&gt; Parser b
+</span><a href="#local-6989586621679221166"><span class="hs-identifier hs-var">fn</span></a></span><span> </span><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679221169"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Parser b -&gt; JSONPathElement -&gt; Parser b
+forall a. Parser a -&gt; JSONPathElement -&gt; Parser a
+</span><span class="hs-operator hs-var">Aeson.&lt;?&gt;</span></span><span> </span><span class="annot"><span class="annottext">Key -&gt; JSONPathElement
+</span><span class="hs-identifier hs-var">Aeson.Types.Key</span></span><span> </span><span class="annot"><span class="annottext">Key
+</span><a href="#local-6989586621679221168"><span class="hs-identifier hs-var">key</span></a></span><span>
+</span><span id="line-144"></span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span>
+</span><span id="line-147"></span><span class="annot"><span class="hs-comment">{-| Retrieve the chainId from the message's domain, if present. -}</span></span><span>
+</span><span id="line-148"></span><span class="annot"><a href="Data.SignTyped.Message.html#messageChainId"><span class="hs-identifier hs-type">messageChainId</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-149"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-150"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-151"></span><span id="messageChainId"><span class="annot"><span class="annottext">messageChainId :: Message -&gt; Maybe Int
+</span><a href="Data.SignTyped.Message.html#messageChainId"><span class="hs-identifier hs-var hs-var">messageChainId</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span><span> </span><span id="local-6989586621679221180"><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221180"><span class="hs-identifier hs-var">tc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Structure.html#EthValueStruct"><span class="hs-identifier hs-type">EthValueStruct</span></a></span><span> </span><span id="local-6989586621679221182"><span class="annot"><span class="annottext">HList (EthValue ctx) (Lookup EIP712DomainSymbol ctx)
+</span><a href="#local-6989586621679221182"><span class="hs-identifier hs-var">domainFields</span></a></span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">EthType primRep
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">EthValue ctx primRep
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-152"></span><span>    </span><span class="annot"><span class="annottext">TypeContext ctx
+-&gt; SName EIP712DomainSymbol
+-&gt; (StructDef (Lookup EIP712DomainSymbol ctx) -&gt; Maybe Int)
+-&gt; Maybe Int
+forall (ctx :: TMap Symbol [EthRepr]) (typename :: Symbol) r.
+TypeContext ctx
+-&gt; SName typename -&gt; (StructDef (Lookup typename ctx) -&gt; r) -&gt; r
+</span><a href="Data.SignTyped.Structure.html#withStructDef"><span class="hs-identifier hs-var">withStructDef</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221180"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall (sym :: Symbol). KnownName sym =&gt; SName sym
+</span><a href="Data.SignTyped.Type.SName.html#SName"><span class="hs-identifier hs-var">SName</span></a></span><span> </span><span class="hs-glyph">@</span><span class="annot"><a href="Data.SignTyped.EIP712Domain.html#EIP712DomainSymbol"><span class="hs-identifier hs-type">EIP712DomainSymbol</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((StructDef (Lookup EIP712DomainSymbol ctx) -&gt; Maybe Int)
+ -&gt; Maybe Int)
+-&gt; (StructDef (Lookup EIP712DomainSymbol ctx) -&gt; Maybe Int)
+-&gt; Maybe Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679221185"><span class="annot"><span class="annottext">StructDef (Lookup EIP712DomainSymbol ctx)
+</span><a href="#local-6989586621679221185"><span class="hs-identifier hs-var">memDefs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-153"></span><span>        </span><span class="annot"><span class="annottext">Alt Maybe Int -&gt; Maybe Int
+forall {k} (f :: k -&gt; *) (a :: k). Alt f a -&gt; f a
+</span><span class="hs-identifier hs-var">getAlt</span></span><span> </span><span class="annot"><span class="annottext">(Alt Maybe Int -&gt; Maybe Int) -&gt; Alt Maybe Int -&gt; Maybe Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-154"></span><span>        </span><span class="annot"><span class="annottext">(forall (t :: EthRepr).
+ Product MemberDef (EthValue ctx) t -&gt; Alt Maybe Int)
+-&gt; HList
+     (Product MemberDef (EthValue ctx)) (Lookup EIP712DomainSymbol ctx)
+-&gt; Alt Maybe Int
+forall {k} m (f :: k -&gt; *) (ts :: [k]).
+Monoid m =&gt;
+(forall (t :: k). f t -&gt; m) -&gt; HList f ts -&gt; m
+</span><a href="Data.SignTyped.Type.HList.html#hfoldMap"><span class="hs-identifier hs-var">hfoldMap</span></a></span><span>
+</span><span id="line-155"></span><span>            </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-156"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">Pair</span></span><span> </span><span id="local-6989586621679221189"><span class="annot"><span class="annottext">MemberDef t
+</span><a href="#local-6989586621679221189"><span class="hs-identifier hs-var">mdef</span></a></span></span><span> </span><span id="local-6989586621679221190"><span class="annot"><span class="annottext">EthValue ctx t
+</span><a href="#local-6989586621679221190"><span class="hs-identifier hs-var">mval</span></a></span></span><span>
+</span><span id="line-157"></span><span>                    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><a href="Data.SignTyped.Structure.html#MemberDef"><span class="hs-identifier hs-type">MemberDef</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Structure.html#EthTypeAtomic"><span class="hs-identifier hs-type">EthTypeAtomic</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Structure.html#AtomicEthTypeInteger"><span class="hs-identifier hs-type">AtomicEthTypeInteger</span></a></span><span> </span><span class="annot"><span class="annottext">AtomicIntegerSignedness
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;chainId&quot;</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MemberDef t
+</span><a href="#local-6989586621679221189"><span class="hs-identifier hs-var">mdef</span></a></span><span>
+</span><span id="line-158"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Structure.html#EthValueAtomic"><span class="hs-identifier hs-type">EthValueAtomic</span></a></span><span> </span><span id="local-6989586621679221214"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679221214"><span class="hs-identifier hs-var">cid</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">EthValue ctx t
+</span><a href="#local-6989586621679221190"><span class="hs-identifier hs-var">mval</span></a></span><span>
+</span><span id="line-159"></span><span>                    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Integer
+forall a. Integral a =&gt; a -&gt; Integer
+</span><span class="hs-identifier hs-var">toInteger</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">minBound</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679221214"><span class="hs-identifier hs-var">cid</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679221214"><span class="hs-identifier hs-var">cid</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Integer
+forall a. Integral a =&gt; a -&gt; Integer
+</span><span class="hs-identifier hs-var">toInteger</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">forall a. Bounded a =&gt; a
+</span><span class="hs-identifier hs-var">maxBound</span></span><span> </span><span class="hs-glyph">@</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-160"></span><span>                        </span><span class="annot"><span class="annottext">Maybe Int -&gt; Alt Maybe Int
+forall {k} (f :: k -&gt; *) (a :: k). f a -&gt; Alt f a
+</span><span class="hs-identifier hs-var">Alt</span></span><span> </span><span class="annot"><span class="annottext">(Maybe Int -&gt; Alt Maybe Int) -&gt; Maybe Int -&gt; Alt Maybe Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Maybe Int
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Maybe Int) -&gt; Int -&gt; Maybe Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Int
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">fromIntegral</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679221214"><span class="hs-identifier hs-var">cid</span></a></span><span>
+</span><span id="line-161"></span><span>                    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-162"></span><span>                        </span><span class="annot"><span class="annottext">Maybe Int -&gt; Alt Maybe Int
+forall {k} (f :: k -&gt; *) (a :: k). f a -&gt; Alt f a
+</span><span class="hs-identifier hs-var">Alt</span></span><span> </span><span class="annot"><span class="annottext">Maybe Int
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-163"></span><span>            </span><span class="hs-special">)</span><span>
+</span><span id="line-164"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">StructDef (Lookup EIP712DomainSymbol ctx)
+-&gt; HList (EthValue ctx) (Lookup EIP712DomainSymbol ctx)
+-&gt; HList
+     (Product MemberDef (EthValue ctx)) (Lookup EIP712DomainSymbol ctx)
+forall {k} (f :: k -&gt; *) (ts :: [k]) (g :: k -&gt; *).
+HList f ts -&gt; HList g ts -&gt; HList (Product f g) ts
+</span><a href="Data.SignTyped.Type.HList.html#hzip"><span class="hs-identifier hs-var">hzip</span></a></span><span> </span><span class="annot"><span class="annottext">StructDef (Lookup EIP712DomainSymbol ctx)
+</span><a href="#local-6989586621679221185"><span class="hs-identifier hs-var">memDefs</span></a></span><span> </span><span class="annot"><span class="annottext">HList (EthValue ctx) (Lookup EIP712DomainSymbol ctx)
+</span><a href="#local-6989586621679221182"><span class="hs-identifier hs-var">domainFields</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span>
+</span><span id="line-167"></span><span>
+</span><span id="line-168"></span><span class="annot"><span class="hs-comment">{-| Calculates the final hash of the message, as given by the expression:
+
+    @
+        keccak256(&quot;\\x19\\x01&quot; &#8214; domainSeparator &#8214; hashStruct(message))
+    @ -}</span></span><span>
+</span><span id="line-173"></span><span class="annot"><a href="Data.SignTyped.Message.html#hashMessage"><span class="hs-identifier hs-type">hashMessage</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-174"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-175"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Crypto.html#MessageHash"><span class="hs-identifier hs-type">MessageHash</span></a></span><span>
+</span><span id="line-176"></span><span id="hashMessage"><span class="annot"><span class="annottext">hashMessage :: Message -&gt; MessageHash
+</span><a href="Data.SignTyped.Message.html#hashMessage"><span class="hs-identifier hs-var hs-var">hashMessage</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span><span> </span><span id="local-6989586621679221228"><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221228"><span class="hs-identifier hs-var">tc</span></a></span></span><span> </span><span id="local-6989586621679221229"><span class="annot"><span class="annottext">EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679221229"><span class="hs-identifier hs-var">domainEthValue</span></a></span></span><span> </span><span id="local-6989586621679221230"><span class="annot"><span class="annottext">EthType primRep
+</span><a href="#local-6989586621679221230"><span class="hs-identifier hs-var">messageEthType</span></a></span></span><span> </span><span id="local-6989586621679221231"><span class="annot"><span class="annottext">EthValue ctx primRep
+</span><a href="#local-6989586621679221231"><span class="hs-identifier hs-var">messageEthValue</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-177"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Maybe MessageHash
+</span><span class="hs-identifier hs-var">C.msg</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679221233"><span class="hs-identifier hs-var">msgBytes</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-178"></span><span>        </span><span class="annot"><span class="annottext">Maybe MessageHash
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; MessageHash
+forall a. HasCallStack =&gt; String -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;unexpected&quot;</span></span><span>
+</span><span id="line-179"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679221235"><span class="annot"><span class="annottext">MessageHash
+</span><a href="#local-6989586621679221235"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">MessageHash
+</span><a href="#local-6989586621679221235"><span class="hs-identifier hs-var">msg</span></a></span><span>
+</span><span id="line-180"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-181"></span><span>    </span><span id="local-6989586621679221233"><span class="annot"><span class="annottext">msgBytes :: ByteString
+</span><a href="#local-6989586621679221233"><span class="hs-identifier hs-var hs-var">msgBytes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-182"></span><span>        </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString
+</span><a href="Data.SignTyped.Util.html#keccak256"><span class="hs-identifier hs-var">keccak256</span></a></span><span> </span><span class="annot"><span class="annottext">(ByteString -&gt; ByteString) -&gt; ByteString -&gt; ByteString
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-183"></span><span>            </span><span class="annot"><span class="annottext">ByteString
+</span><span class="hs-string">&quot;\x19\x01&quot;</span></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString -&gt; ByteString
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span>
+</span><span id="line-184"></span><span>            </span><span class="annot"><span class="annottext">TypeContext ctx
+-&gt; EthType ('EthReprStruct EIP712DomainSymbol)
+-&gt; EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+-&gt; ByteString
+forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+TypeContext ctx -&gt; EthType rep -&gt; EthValue ctx rep -&gt; ByteString
+</span><a href="Data.SignTyped.Hashing.html#hashEthValue"><span class="hs-identifier hs-var">hashEthValue</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221228"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">EthType ('EthReprStruct EIP712DomainSymbol)
+</span><a href="Data.SignTyped.EIP712Domain.html#eip712DomainEthType"><span class="hs-identifier hs-var">eip712DomainEthType</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue ctx ('EthReprStruct EIP712DomainSymbol)
+</span><a href="#local-6989586621679221229"><span class="hs-identifier hs-var">domainEthValue</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString -&gt; ByteString
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span>
+</span><span id="line-185"></span><span>            </span><span class="annot"><span class="annottext">TypeContext ctx
+-&gt; EthType primRep -&gt; EthValue ctx primRep -&gt; ByteString
+forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+TypeContext ctx -&gt; EthType rep -&gt; EthValue ctx rep -&gt; ByteString
+</span><a href="Data.SignTyped.Hashing.html#hashEthValue"><span class="hs-identifier hs-var">hashEthValue</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679221228"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">EthType primRep
+</span><a href="#local-6989586621679221230"><span class="hs-identifier hs-var">messageEthType</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue ctx primRep
+</span><a href="#local-6989586621679221231"><span class="hs-identifier hs-var">messageEthValue</span></a></span><span>
+</span><span id="line-186"></span><span>
+</span><span id="line-187"></span><span class="annot"><span class="hs-comment">{-| Sign a message with the given secret key. -}</span></span><span>
+</span><span id="line-188"></span><span class="annot"><a href="Data.SignTyped.Message.html#signMessage"><span class="hs-identifier hs-type">signMessage</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-189"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">C.Ctx</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-190"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">C.SecKey</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-191"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-192"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Crypto.html#Signature"><span class="hs-identifier hs-type">Signature</span></a></span><span>
+</span><span id="line-193"></span><span id="signMessage"><span class="annot"><span class="annottext">signMessage :: Ctx -&gt; SecKey -&gt; Message -&gt; ByteString
+</span><a href="Data.SignTyped.Message.html#signMessage"><span class="hs-identifier hs-var hs-var">signMessage</span></a></span></span><span> </span><span id="local-6989586621679221239"><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679221239"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span id="local-6989586621679221240"><span class="annot"><span class="annottext">SecKey
+</span><a href="#local-6989586621679221240"><span class="hs-identifier hs-var">secKey</span></a></span></span><span> </span><span id="local-6989586621679221241"><span class="annot"><span class="annottext">Message
+</span><a href="#local-6989586621679221241"><span class="hs-identifier hs-var">message</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-194"></span><span>    </span><span class="annot"><span class="annottext">Ctx -&gt; SecKey -&gt; Maybe Int -&gt; MessageHash -&gt; ByteString
+</span><a href="Data.SignTyped.Crypto.html#messageHashSign"><span class="hs-identifier hs-var">messageHashSign</span></a></span><span> </span><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679221239"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">SecKey
+</span><a href="#local-6989586621679221240"><span class="hs-identifier hs-var">secKey</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Message -&gt; Maybe Int
+</span><a href="Data.SignTyped.Message.html#messageChainId"><span class="hs-identifier hs-var">messageChainId</span></a></span><span> </span><span class="annot"><span class="annottext">Message
+</span><a href="#local-6989586621679221241"><span class="hs-identifier hs-var">message</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Message -&gt; MessageHash
+</span><a href="Data.SignTyped.Message.html#hashMessage"><span class="hs-identifier hs-var">hashMessage</span></a></span><span> </span><span class="annot"><span class="annottext">Message
+</span><a href="#local-6989586621679221241"><span class="hs-identifier hs-var">message</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-195"></span><span>
+</span><span id="line-196"></span><span class="annot"><span class="hs-comment">{-| Recovers the signer's address from a message and a signature. -}</span></span><span>
+</span><span id="line-197"></span><span class="annot"><a href="Data.SignTyped.Message.html#recoverMessageSigner"><span class="hs-identifier hs-type">recoverMessageSigner</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-198"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">C.Ctx</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-199"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Message.html#Message"><span class="hs-identifier hs-type">Message</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-200"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Crypto.html#Signature"><span class="hs-identifier hs-type">Signature</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-201"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Data.SignTyped.Crypto.html#Address"><span class="hs-identifier hs-type">Address</span></a></span><span>
+</span><span id="line-202"></span><span id="recoverMessageSigner"><span class="annot"><span class="annottext">recoverMessageSigner :: Ctx -&gt; Message -&gt; ByteString -&gt; Maybe ByteString
+</span><a href="Data.SignTyped.Message.html#recoverMessageSigner"><span class="hs-identifier hs-var hs-var">recoverMessageSigner</span></a></span></span><span> </span><span id="local-6989586621679221244"><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679221244"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span id="local-6989586621679221245"><span class="annot"><span class="annottext">Message
+</span><a href="#local-6989586621679221245"><span class="hs-identifier hs-var">message</span></a></span></span><span> </span><span id="local-6989586621679221246"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679221246"><span class="hs-identifier hs-var">sigBytes</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-203"></span><span>    </span><span class="annot"><span class="annottext">Ctx -&gt; Maybe Int -&gt; MessageHash -&gt; ByteString -&gt; Maybe ByteString
+</span><a href="Data.SignTyped.Crypto.html#messageHashRecover"><span class="hs-identifier hs-var">messageHashRecover</span></a></span><span> </span><span class="annot"><span class="annottext">Ctx
+</span><a href="#local-6989586621679221244"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Message -&gt; Maybe Int
+</span><a href="Data.SignTyped.Message.html#messageChainId"><span class="hs-identifier hs-var">messageChainId</span></a></span><span> </span><span class="annot"><span class="annottext">Message
+</span><a href="#local-6989586621679221245"><span class="hs-identifier hs-var">message</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Message -&gt; MessageHash
+</span><a href="Data.SignTyped.Message.html#hashMessage"><span class="hs-identifier hs-var">hashMessage</span></a></span><span> </span><span class="annot"><span class="annottext">Message
+</span><a href="#local-6989586621679221245"><span class="hs-identifier hs-var">message</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679221246"><span class="hs-identifier hs-var">sigBytes</span></a></span><span>
+</span><span id="line-204"></span></pre></body></html>

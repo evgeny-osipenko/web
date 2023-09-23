@@ -1,0 +1,456 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.SignTyped.Type.HList</span><span>
+</span><span id="line-2"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier">HList</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-3"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hmap"><span class="hs-identifier">hmap</span></a></span><span>
+</span><span id="line-4"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#htraverse"><span class="hs-identifier">htraverse</span></a></span><span>
+</span><span id="line-5"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hfoldr"><span class="hs-identifier">hfoldr</span></a></span><span>
+</span><span id="line-6"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hfoldMap"><span class="hs-identifier">hfoldMap</span></a></span><span>
+</span><span id="line-7"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hzip"><span class="hs-identifier">hzip</span></a></span><span>
+</span><span id="line-8"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hzipWith"><span class="hs-identifier">hzipWith</span></a></span><span>
+</span><span id="line-9"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#htoList"><span class="hs-identifier">htoList</span></a></span><span>
+</span><span id="line-10"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hfromList"><span class="hs-identifier">hfromList</span></a></span><span>
+</span><span id="line-11"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hsequenceSome"><span class="hs-identifier">hsequenceSome</span></a></span><span>
+</span><span id="line-12"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Product</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Applicative</span></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Functor.Product</span></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.Some.html"><span class="hs-identifier">Data.SignTyped.Type.Some</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Type.Equality</span></span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">infixr</span><span> </span><span class="hs-number">4</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-type">:/</span></a></span><span>
+</span><span id="line-22"></span><span class="annot"><span class="hs-comment">{-| A heterogeneous list.
+
+    The first parameter is a unary type constructor, which is applied to each of the elements of the second parameter
+to obtain the full type of each of the `HList`'s elements.
+
+    For example, a value of type @HList f \'[t1, t2, t3]@ contains three objects of types @(f t1, f t2, f t3)@. -}</span></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">data</span><span> </span><span id="HList"><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-var">HList</span></a></span></span><span> </span><span id="local-6989586621679214663"><span class="annot"><a href="#local-6989586621679214663"><span class="hs-identifier hs-type">f</span></a></span></span><span> </span><span id="local-6989586621679214664"><span class="annot"><a href="#local-6989586621679214664"><span class="hs-identifier hs-type">ts</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-29"></span><span>    </span><span id="local-6989586621679214541"><span id="local-6989586621679214665"><span id="local-6989586621679214666"><span id="%3A%2F"><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-var">(:/)</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679214541"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214665"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214541"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214666"><span class="hs-identifier hs-type">rest</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214541"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679214665"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-glyph">:</span><span> </span><span class="annot"><a href="#local-6989586621679214666"><span class="hs-identifier hs-type">rest</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-30"></span><span>    </span><span id="local-6989586621679214509"><span id="HEnd"><span class="annot"><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214509"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-special">'</span><span class="hs-special">[</span><span class="hs-special">]</span></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span id="local-6989586621679214478"><span id="local-6989586621679214479"><span id="local-6989586621679214669"><span id="local-6989586621679214671"><span id="local-6989586621679214675"><span class="hs-keyword">deriving</span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679214474"><span class="annot"><a href="#local-6989586621679214474"><span class="hs-identifier hs-type">t</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679214478"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214474"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214478"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214479"><span class="hs-identifier hs-type">ts</span></a></span><span class="hs-special">)</span></span></span></span></span></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679214487"><span id="local-6989586621679214681"><span id="local-6989586621679214685"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-type">Some</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214487"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-type">Some</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679214693"><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214693"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-type">:/</span></a></span><span> </span><span id="local-6989586621679214694"><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214694"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679214695"><span class="annot"><span class="annottext">&lt;&gt; :: Some (HList f) -&gt; Some (HList f) -&gt; Some (HList f)
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span id="local-6989586621679214696"><span class="annot"><span class="annottext">Some (HList f)
+</span><a href="#local-6989586621679214696"><span class="hs-identifier hs-var">ys</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Some (HList f)
+-&gt; (forall (t :: [k]). HList f t -&gt; Some (HList f))
+-&gt; Some (HList f)
+forall {k} (f :: k -&gt; *) r.
+Some f -&gt; (forall (t :: k). f t -&gt; r) -&gt; r
+</span><a href="Data.SignTyped.Type.Some.html#withSome"><span class="hs-identifier hs-var">withSome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HList f rest -&gt; Some (HList f)
+forall {k} (f :: k -&gt; *) (t :: k). f t -&gt; Some f
+</span><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-var">Some</span></a></span><span> </span><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214694"><span class="hs-identifier hs-var">rest</span></a></span><span> </span><span class="annot"><span class="annottext">Some (HList f) -&gt; Some (HList f) -&gt; Some (HList f)
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Some (HList f)
+</span><a href="#local-6989586621679214696"><span class="hs-identifier hs-var">ys</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HList f (t : t) -&gt; Some (HList f)
+forall {k} (f :: k -&gt; *) (t :: k). f t -&gt; Some f
+</span><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-var">Some</span></a></span><span> </span><span class="annot"><span class="annottext">(HList f (t : t) -&gt; Some (HList f))
+-&gt; (HList f t -&gt; HList f (t : t)) -&gt; HList f t -&gt; Some (HList f)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214693"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-operator">:/</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-type">Some</span></a></span><span> </span><span class="annot"><span class="annottext">HList f t
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span> </span><span class="annot"><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span id="local-6989586621679214700"><span class="annot"><span class="annottext">Some (HList f)
+</span><a href="#local-6989586621679214700"><span class="hs-identifier hs-var">ys</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Some (HList f)
+</span><a href="#local-6989586621679214700"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679214507"><span id="local-6989586621679214705"><span id="local-6989586621679214709"><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-type">Some</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214507"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-39"></span><span>    </span><span id="local-6989586621679214712"><span class="annot"><span class="annottext">mempty :: Some (HList f)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HList f '[] -&gt; Some (HList f)
+forall {k} (f :: k -&gt; *) (t :: k). f t -&gt; Some f
+</span><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-var">Some</span></a></span><span> </span><span class="annot"><span class="annottext">HList f '[]
+forall {k} (f :: k -&gt; *). HList f '[]
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679214519"><span class="annot"><span class="hs-identifier hs-type">TestEquality</span></span><span> </span><span class="annot"><a href="#local-6989586621679214519"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">TestEquality</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214519"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">)</span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-42"></span><span>    </span><span id="local-6989586621679214717"><span class="annot"><span class="annottext">testEquality :: forall (a :: [k]) (b :: [k]).
+HList f a -&gt; HList f b -&gt; Maybe (a :~: b)
+</span><a href="#local-6989586621679214717"><span class="hs-identifier hs-var hs-var hs-var hs-var">testEquality</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679214720"><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214720"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-type">:/</span></a></span><span> </span><span id="local-6989586621679214721"><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214721"><span class="hs-keyword hs-var">as</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679214726"><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214726"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-type">:/</span></a></span><span> </span><span id="local-6989586621679214727"><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214727"><span class="hs-identifier hs-var">bs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-43"></span><span>        </span><span class="annot"><span class="annottext">t :~: t
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">f t -&gt; f t -&gt; Maybe (t :~: t)
+forall (a :: k) (b :: k). f a -&gt; f b -&gt; Maybe (a :~: b)
+forall {k} (f :: k -&gt; *) (a :: k) (b :: k).
+TestEquality f =&gt;
+f a -&gt; f b -&gt; Maybe (a :~: b)
+</span><span class="hs-identifier hs-var">testEquality</span></span><span> </span><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214720"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214726"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-44"></span><span>        </span><span class="annot"><span class="annottext">rest :~: rest
+</span><span class="hs-identifier hs-var">Refl</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">HList f rest -&gt; HList f rest -&gt; Maybe (rest :~: rest)
+forall (a :: [k]) (b :: [k]).
+HList f a -&gt; HList f b -&gt; Maybe (a :~: b)
+forall {k} (f :: k -&gt; *) (a :: k) (b :: k).
+TestEquality f =&gt;
+f a -&gt; f b -&gt; Maybe (a :~: b)
+</span><span class="hs-identifier hs-var">testEquality</span></span><span> </span><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214721"><span class="hs-keyword hs-var">as</span></a></span><span> </span><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214727"><span class="hs-identifier hs-var">bs</span></a></span><span>
+</span><span id="line-45"></span><span>        </span><span class="annot"><span class="annottext">(a :~: b) -&gt; Maybe (a :~: b)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">a :~: a
+a :~: b
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">testEquality</span></span><span> </span><span class="annot"><span class="annottext">HList f a
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span> </span><span class="annot"><span class="annottext">HList f b
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-47"></span><span>        </span><span class="annot"><span class="annottext">(a :~: b) -&gt; Maybe (a :~: b)
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">a :~: a
+a :~: b
+forall {k} (a :: k). a :~: a
+</span><span class="hs-identifier hs-var">Refl</span></span><span>
+</span><span id="line-48"></span><span>    </span><span class="annot"><span class="hs-identifier hs-var">testEquality</span></span><span> </span><span class="annot"><span class="annottext">HList f a
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">HList f b
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-49"></span><span>        </span><span class="annot"><span class="annottext">Maybe (a :~: b)
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="annot"><span class="hs-comment">{-| Heterogeneous `map`. The mapping function is a natural transformation.
+
+    For example:
+
+    @
+        hmap
+            (maybe (Left &quot;no value&quot;) Right
+                :: forall t. Maybe t -&gt; Either String t)
+            (Just 10 :\/ Just &quot;text&quot;  :\/ Nothing \@Float  :\/ HEnd
+                :: HList Maybe '[Int, String, Float])
+      ==
+            Right 10 :\/ Right &quot;text&quot; :\/ Left &quot;no value&quot; :\/ HEnd
+                :: HList (Either String) '[Int, String, Float]
+
+    @ -}</span></span><span>
+</span><span id="line-66"></span><span id="local-6989586621679214530"><span id="local-6989586621679214532"><span id="local-6989586621679214533"><span class="annot"><a href="Data.SignTyped.Type.HList.html#hmap"><span class="hs-identifier hs-type">hmap</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679214531"><span class="annot"><a href="#local-6989586621679214531"><span class="hs-identifier hs-type">t</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="#local-6989586621679214530"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214531"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679214532"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214531"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214530"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214533"><span class="hs-identifier hs-type">ts</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214532"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214533"><span class="hs-identifier hs-type">ts</span></a></span></span></span></span><span>
+</span><span id="line-67"></span><span id="hmap"><span class="annot"><span class="annottext">hmap :: forall {k} (f :: k -&gt; *) (g :: k -&gt; *) (ts :: [k]).
+(forall (t :: k). f t -&gt; g t) -&gt; HList f ts -&gt; HList g ts
+</span><a href="Data.SignTyped.Type.HList.html#hmap"><span class="hs-identifier hs-var hs-var">hmap</span></a></span></span><span> </span><span id="local-6989586621679214735"><span class="annot"><span class="annottext">forall (t :: k). f t -&gt; g t
+</span><a href="#local-6989586621679214735"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679214737"><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214737"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-type">:/</span></a></span><span> </span><span id="local-6989586621679214738"><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214738"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">f t -&gt; g t
+forall (t :: k). f t -&gt; g t
+</span><a href="#local-6989586621679214735"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214737"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">g t -&gt; HList g rest -&gt; HList g (t : rest)
+forall {k} (f :: k -&gt; *) (t :: k) (rest :: [k]).
+f t -&gt; HList f rest -&gt; HList f (t : rest)
+</span><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-var">:/</span></a></span><span> </span><span class="annot"><span class="annottext">(forall (t :: k). f t -&gt; g t) -&gt; HList f rest -&gt; HList g rest
+forall {k} (f :: k -&gt; *) (g :: k -&gt; *) (ts :: [k]).
+(forall (t :: k). f t -&gt; g t) -&gt; HList f ts -&gt; HList g ts
+</span><a href="Data.SignTyped.Type.HList.html#hmap"><span class="hs-identifier hs-var">hmap</span></a></span><span> </span><span class="annot"><span class="annottext">f t -&gt; g t
+forall (t :: k). f t -&gt; g t
+</span><a href="#local-6989586621679214735"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214738"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><span id="line-68"></span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hmap"><span class="hs-identifier hs-var">hmap</span></a></span><span> </span><span class="annot"><span class="annottext">forall (t :: k). f t -&gt; g t
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">HList f ts
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HList g ts
+HList g '[]
+forall {k} (f :: k -&gt; *). HList f '[]
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="annot"><span class="hs-comment">{-| Heterogeneous `traverse`.
+
+    For example:
+
+    @
+        htraverse
+            (maybe ([Left &quot;no value&quot;]) (\\x -&gt; [Left &quot;removed&quot;, Right x])
+                :: forall t. Maybe t -&gt; [Either String t])
+            (Just 10         :\/ Just &quot;text&quot;    :\/ Nothing \@Float  :\/ HEnd
+                :: HList Maybe '[Int, String, Float])
+      ==
+            [ Left &quot;removed&quot; :\/ Left &quot;removed&quot; :\/ Left &quot;no value&quot; :\/ HEnd
+            , Left &quot;removed&quot; :\/ Right &quot;text&quot;   :\/ Left &quot;no value&quot; :\/ HEnd
+            , Right 10       :\/ Left &quot;removed&quot; :\/ Left &quot;no value&quot; :\/ HEnd
+            , Right 10       :\/ Right &quot;text&quot;   :\/ Left &quot;no value&quot; :\/ HEnd
+            ]
+                :: [HList (Either String) '[Int, String, Float]]
+
+    @ -}</span></span><span>
+</span><span id="line-89"></span><span id="local-6989586621679214546"><span id="local-6989586621679214547"><span id="local-6989586621679214549"><span id="local-6989586621679214550"><span class="annot"><a href="Data.SignTyped.Type.HList.html#htraverse"><span class="hs-identifier hs-type">htraverse</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Applicative</span></span><span> </span><span class="annot"><a href="#local-6989586621679214546"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679214548"><span class="annot"><a href="#local-6989586621679214548"><span class="hs-identifier hs-type">t</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="#local-6989586621679214547"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214548"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679214546"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679214549"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214548"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214547"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214550"><span class="hs-identifier hs-type">ts</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679214546"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214549"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214550"><span class="hs-identifier hs-type">ts</span></a></span><span class="hs-special">)</span></span></span></span></span><span>
+</span><span id="line-90"></span><span id="htraverse"><span class="annot"><span class="annottext">htraverse :: forall {k} (m :: * -&gt; *) (f :: k -&gt; *) (g :: k -&gt; *) (ts :: [k]).
+Applicative m =&gt;
+(forall (t :: k). f t -&gt; m (g t)) -&gt; HList f ts -&gt; m (HList g ts)
+</span><a href="Data.SignTyped.Type.HList.html#htraverse"><span class="hs-identifier hs-var hs-var">htraverse</span></a></span></span><span> </span><span id="local-6989586621679214742"><span class="annot"><span class="annottext">forall (t :: k). f t -&gt; m (g t)
+</span><a href="#local-6989586621679214742"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679214746"><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214746"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-type">:/</span></a></span><span> </span><span id="local-6989586621679214747"><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214747"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(g t -&gt; HList g rest -&gt; HList g ts)
+-&gt; m (g t) -&gt; m (HList g rest) -&gt; m (HList g ts)
+forall a b c. (a -&gt; b -&gt; c) -&gt; m a -&gt; m b -&gt; m c
+forall (f :: * -&gt; *) a b c.
+Applicative f =&gt;
+(a -&gt; b -&gt; c) -&gt; f a -&gt; f b -&gt; f c
+</span><span class="hs-identifier hs-var">liftA2</span></span><span> </span><span class="annot"><span class="annottext">g t -&gt; HList g rest -&gt; HList g ts
+g t -&gt; HList g rest -&gt; HList g (t : rest)
+forall {k} (f :: k -&gt; *) (t :: k) (rest :: [k]).
+f t -&gt; HList f rest -&gt; HList f (t : rest)
+</span><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-var">(:/)</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">f t -&gt; m (g t)
+forall (t :: k). f t -&gt; m (g t)
+</span><a href="#local-6989586621679214742"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214746"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(forall (t :: k). f t -&gt; m (g t))
+-&gt; HList f rest -&gt; m (HList g rest)
+forall {k} (m :: * -&gt; *) (f :: k -&gt; *) (g :: k -&gt; *) (ts :: [k]).
+Applicative m =&gt;
+(forall (t :: k). f t -&gt; m (g t)) -&gt; HList f ts -&gt; m (HList g ts)
+</span><a href="Data.SignTyped.Type.HList.html#htraverse"><span class="hs-identifier hs-var">htraverse</span></a></span><span> </span><span class="annot"><span class="annottext">f t -&gt; m (g t)
+forall (t :: k). f t -&gt; m (g t)
+</span><a href="#local-6989586621679214742"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214747"><span class="hs-identifier hs-var">rest</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-91"></span><span class="annot"><a href="Data.SignTyped.Type.HList.html#htraverse"><span class="hs-identifier hs-var">htraverse</span></a></span><span> </span><span class="annot"><span class="annottext">forall (t :: k). f t -&gt; m (g t)
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">HList f ts
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HList g ts -&gt; m (HList g ts)
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">HList g ts
+HList g '[]
+forall {k} (f :: k -&gt; *). HList f '[]
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span>
+</span><span id="line-92"></span><span>
+</span><span id="line-93"></span><span class="annot"><span class="hs-comment">{-| Heterogeneous `foldr`.
+
+    For example:
+
+    @
+        hfoldr
+            (maybe (&quot;n&quot; ++) (\\_ -&gt; (&quot;j&quot; ++))
+                :: forall t. Maybe t -&gt; String -&gt; String)
+            &quot;&quot;
+            (Just 10 :\/ Just &quot;text&quot;  :\/ Nothing \@Float  :\/ HEnd
+                :: HList Maybe '[Int, String, Float])
+      ==
+            &quot;jjn&quot;
+
+    @ -}</span></span><span>
+</span><span id="line-108"></span><span id="local-6989586621679214565"><span id="local-6989586621679214567"><span id="local-6989586621679214568"><span class="annot"><a href="Data.SignTyped.Type.HList.html#hfoldr"><span class="hs-identifier hs-type">hfoldr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679214566"><span class="annot"><a href="#local-6989586621679214566"><span class="hs-identifier hs-type">t</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="#local-6989586621679214565"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214566"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679214567"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679214567"><span class="hs-identifier hs-type">r</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679214567"><span class="hs-identifier hs-type">r</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214565"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214568"><span class="hs-identifier hs-type">ts</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679214567"><span class="hs-identifier hs-type">r</span></a></span></span></span></span><span>
+</span><span id="line-109"></span><span id="hfoldr"><span class="annot"><span class="annottext">hfoldr :: forall {k} (f :: k -&gt; *) r (ts :: [k]).
+(forall (t :: k). f t -&gt; r -&gt; r) -&gt; r -&gt; HList f ts -&gt; r
+</span><a href="Data.SignTyped.Type.HList.html#hfoldr"><span class="hs-identifier hs-var hs-var">hfoldr</span></a></span></span><span> </span><span id="local-6989586621679214752"><span class="annot"><span class="annottext">forall (t :: k). f t -&gt; r -&gt; r
+</span><a href="#local-6989586621679214752"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679214753"><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679214753"><span class="hs-identifier hs-var">z</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679214755"><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214755"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-type">:/</span></a></span><span> </span><span id="local-6989586621679214756"><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214756"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">f t -&gt; r -&gt; r
+forall (t :: k). f t -&gt; r -&gt; r
+</span><a href="#local-6989586621679214752"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214755"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(forall (t :: k). f t -&gt; r -&gt; r) -&gt; r -&gt; HList f rest -&gt; r
+forall {k} (f :: k -&gt; *) r (ts :: [k]).
+(forall (t :: k). f t -&gt; r -&gt; r) -&gt; r -&gt; HList f ts -&gt; r
+</span><a href="Data.SignTyped.Type.HList.html#hfoldr"><span class="hs-identifier hs-var">hfoldr</span></a></span><span> </span><span class="annot"><span class="annottext">f t -&gt; r -&gt; r
+forall (t :: k). f t -&gt; r -&gt; r
+</span><a href="#local-6989586621679214752"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679214753"><span class="hs-identifier hs-var">z</span></a></span><span> </span><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214756"><span class="hs-identifier hs-var">rest</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-110"></span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hfoldr"><span class="hs-identifier hs-var">hfoldr</span></a></span><span> </span><span class="annot"><span class="annottext">forall (t :: k). f t -&gt; r -&gt; r
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679214757"><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679214757"><span class="hs-identifier hs-var">z</span></a></span></span><span> </span><span class="annot"><span class="annottext">HList f ts
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">r
+</span><a href="#local-6989586621679214757"><span class="hs-identifier hs-var">z</span></a></span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span class="annot"><span class="hs-comment">{-| Heterogeneous `foldMap`. -}</span></span><span>
+</span><span id="line-113"></span><span id="local-6989586621679214577"><span id="local-6989586621679214578"><span id="local-6989586621679214580"><span class="annot"><a href="Data.SignTyped.Type.HList.html#hfoldMap"><span class="hs-identifier hs-type">hfoldMap</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679214577"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679214579"><span class="annot"><a href="#local-6989586621679214579"><span class="hs-identifier hs-type">t</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="#local-6989586621679214578"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214579"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679214577"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214578"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214580"><span class="hs-identifier hs-type">ts</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679214577"><span class="hs-identifier hs-type">m</span></a></span></span></span></span><span>
+</span><span id="line-114"></span><span id="hfoldMap"><span class="annot"><span class="annottext">hfoldMap :: forall {k} m (f :: k -&gt; *) (ts :: [k]).
+Monoid m =&gt;
+(forall (t :: k). f t -&gt; m) -&gt; HList f ts -&gt; m
+</span><a href="Data.SignTyped.Type.HList.html#hfoldMap"><span class="hs-identifier hs-var hs-var">hfoldMap</span></a></span></span><span> </span><span id="local-6989586621679214763"><span class="annot"><span class="annottext">forall (t :: k). f t -&gt; m
+</span><a href="#local-6989586621679214763"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679214767"><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214767"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-type">:/</span></a></span><span> </span><span id="local-6989586621679214768"><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214768"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">f t -&gt; m
+forall (t :: k). f t -&gt; m
+</span><a href="#local-6989586621679214763"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214767"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">m -&gt; m -&gt; m
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">(forall (t :: k). f t -&gt; m) -&gt; HList f rest -&gt; m
+forall {k} m (f :: k -&gt; *) (ts :: [k]).
+Monoid m =&gt;
+(forall (t :: k). f t -&gt; m) -&gt; HList f ts -&gt; m
+</span><a href="Data.SignTyped.Type.HList.html#hfoldMap"><span class="hs-identifier hs-var">hfoldMap</span></a></span><span> </span><span class="annot"><span class="annottext">f t -&gt; m
+forall (t :: k). f t -&gt; m
+</span><a href="#local-6989586621679214763"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214768"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><span id="line-115"></span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hfoldMap"><span class="hs-identifier hs-var">hfoldMap</span></a></span><span> </span><span class="annot"><span class="annottext">forall (t :: k). f t -&gt; m
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">HList f ts
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">m
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-116"></span><span>
+</span><span id="line-117"></span><span class="annot"><span class="hs-comment">{-| Heterogeneous `zip`.
+
+    For example:
+
+    @
+        hzip
+            (Just 10         :\/ Just &quot;text&quot;    :\/ Nothing         :\/ HEnd
+                :: HList Maybe '[Int, String, Float])
+            (Const &quot;a&quot;       :\/ Const &quot;b&quot;      :\/ Const &quot;c&quot;       :\/ HEnd
+                :: HList (Const String) '[Int, String, Float])
+      ==
+            Pair (Just 10) (Const &quot;a&quot;) :\/ Pair (Just &quot;text&quot;) (Const &quot;b&quot;) :\/ Pair Nothing (Const &quot;c&quot;) :\/ HEnd
+                :: HList (Product Maybe (Const String)) '[Int, String, Float]
+
+    @ -}</span></span><span>
+</span><span id="line-132"></span><span id="local-6989586621679214589"><span id="local-6989586621679214590"><span id="local-6989586621679214591"><span class="annot"><a href="Data.SignTyped.Type.HList.html#hzip"><span class="hs-identifier hs-type">hzip</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214589"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214590"><span class="hs-identifier hs-type">ts</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214591"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214590"><span class="hs-identifier hs-type">ts</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Product</span></span><span> </span><span class="annot"><a href="#local-6989586621679214589"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214591"><span class="hs-identifier hs-type">g</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679214590"><span class="hs-identifier hs-type">ts</span></a></span></span></span></span><span>
+</span><span id="line-133"></span><span id="hzip"><span class="annot"><span class="annottext">hzip :: forall {k} (f :: k -&gt; *) (ts :: [k]) (g :: k -&gt; *).
+HList f ts -&gt; HList g ts -&gt; HList (Product f g) ts
+</span><a href="Data.SignTyped.Type.HList.html#hzip"><span class="hs-identifier hs-var hs-var">hzip</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679214772"><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214772"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-type">:/</span></a></span><span> </span><span id="local-6989586621679214773"><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214773"><span class="hs-identifier hs-var">xrest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679214780"><span class="annot"><span class="annottext">g t
+</span><a href="#local-6989586621679214780"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-type">:/</span></a></span><span> </span><span id="local-6989586621679214781"><span class="annot"><span class="annottext">HList g rest
+</span><a href="#local-6989586621679214781"><span class="hs-identifier hs-var">yrest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">f t -&gt; g t -&gt; Product f g t
+forall {k} (f :: k -&gt; *) (g :: k -&gt; *) (a :: k).
+f a -&gt; g a -&gt; Product f g a
+</span><span class="hs-identifier hs-var">Pair</span></span><span> </span><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214772"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">g t
+g t
+</span><a href="#local-6989586621679214780"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Product f g t
+-&gt; HList (Product f g) rest -&gt; HList (Product f g) (t : rest)
+forall {k} (f :: k -&gt; *) (t :: k) (rest :: [k]).
+f t -&gt; HList f rest -&gt; HList f (t : rest)
+</span><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-var">:/</span></a></span><span> </span><span class="annot"><span class="annottext">HList f rest -&gt; HList g rest -&gt; HList (Product f g) rest
+forall {k} (f :: k -&gt; *) (ts :: [k]) (g :: k -&gt; *).
+HList f ts -&gt; HList g ts -&gt; HList (Product f g) ts
+</span><a href="Data.SignTyped.Type.HList.html#hzip"><span class="hs-identifier hs-var">hzip</span></a></span><span> </span><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214773"><span class="hs-identifier hs-var">xrest</span></a></span><span> </span><span class="annot"><span class="annottext">HList g rest
+HList g rest
+</span><a href="#local-6989586621679214781"><span class="hs-identifier hs-var">yrest</span></a></span><span>
+</span><span id="line-134"></span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hzip"><span class="hs-identifier hs-var">hzip</span></a></span><span> </span><span class="annot"><span class="annottext">HList f ts
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span> </span><span class="annot"><span class="annottext">HList g ts
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HList (Product f g) ts
+HList (Product f g) '[]
+forall {k} (f :: k -&gt; *). HList f '[]
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span>
+</span><span id="line-135"></span><span>
+</span><span id="line-136"></span><span class="annot"><span class="hs-comment">{-| Heterogeneous `zipWith`.
+
+    For example:
+
+    @
+        hzipWith
+            ((\\ma eb -&gt; maybeToList ma &lt;&gt; rightToList eb)
+                :: forall t. Maybe t -&gt; Either () t -&gt; [t])
+            (Just 10         :\/ Just &quot;text&quot;    :\/ Nothing         :\/ HEnd
+                :: HList Maybe '[Int, String, Float])
+            (Right 20        :\/ Left ()        :\/ Right 34.5      :\/ HEnd
+                :: HList (Either ()) '[Int, String, Float])
+      ==
+            [10, 20] :\/ [&quot;text&quot;] :\/ [34.5] :\/ HEnd
+                :: HList [] '[Int, String, Float]
+
+    @ -}</span></span><span>
+</span><span id="line-153"></span><span id="local-6989586621679214606"><span id="local-6989586621679214608"><span id="local-6989586621679214609"><span id="local-6989586621679214610"><span class="annot"><a href="Data.SignTyped.Type.HList.html#hzipWith"><span class="hs-identifier hs-type">hzipWith</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679214607"><span class="annot"><a href="#local-6989586621679214607"><span class="hs-identifier hs-type">t</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="#local-6989586621679214606"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214607"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679214608"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214607"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679214609"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214607"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214606"><span class="hs-identifier hs-type">f</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214610"><span class="hs-identifier hs-type">ts</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214608"><span class="hs-identifier hs-type">g</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214610"><span class="hs-identifier hs-type">ts</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214609"><span class="hs-identifier hs-type">h</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214610"><span class="hs-identifier hs-type">ts</span></a></span></span></span></span></span><span>
+</span><span id="line-154"></span><span id="hzipWith"><span class="annot"><span class="annottext">hzipWith :: forall {k} (f :: k -&gt; *) (g :: k -&gt; *) (h :: k -&gt; *) (ts :: [k]).
+(forall (t :: k). f t -&gt; g t -&gt; h t)
+-&gt; HList f ts -&gt; HList g ts -&gt; HList h ts
+</span><a href="Data.SignTyped.Type.HList.html#hzipWith"><span class="hs-identifier hs-var hs-var">hzipWith</span></a></span></span><span> </span><span id="local-6989586621679214786"><span class="annot"><span class="annottext">forall (t :: k). f t -&gt; g t -&gt; h t
+</span><a href="#local-6989586621679214786"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679214788"><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214788"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-type">:/</span></a></span><span> </span><span id="local-6989586621679214789"><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214789"><span class="hs-identifier hs-var">xrest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679214796"><span class="annot"><span class="annottext">g t
+</span><a href="#local-6989586621679214796"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-type">:/</span></a></span><span> </span><span id="local-6989586621679214797"><span class="annot"><span class="annottext">HList g rest
+</span><a href="#local-6989586621679214797"><span class="hs-identifier hs-var">yrest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">f t -&gt; g t -&gt; h t
+forall (t :: k). f t -&gt; g t -&gt; h t
+</span><a href="#local-6989586621679214786"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214788"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">g t
+g t
+</span><a href="#local-6989586621679214796"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">h t -&gt; HList h rest -&gt; HList h (t : rest)
+forall {k} (f :: k -&gt; *) (t :: k) (rest :: [k]).
+f t -&gt; HList f rest -&gt; HList f (t : rest)
+</span><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-var">:/</span></a></span><span> </span><span class="annot"><span class="annottext">(forall (t :: k). f t -&gt; g t -&gt; h t)
+-&gt; HList f rest -&gt; HList g rest -&gt; HList h rest
+forall {k} (f :: k -&gt; *) (g :: k -&gt; *) (h :: k -&gt; *) (ts :: [k]).
+(forall (t :: k). f t -&gt; g t -&gt; h t)
+-&gt; HList f ts -&gt; HList g ts -&gt; HList h ts
+</span><a href="Data.SignTyped.Type.HList.html#hzipWith"><span class="hs-identifier hs-var">hzipWith</span></a></span><span> </span><span class="annot"><span class="annottext">f t -&gt; g t -&gt; h t
+forall (t :: k). f t -&gt; g t -&gt; h t
+</span><a href="#local-6989586621679214786"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">HList f rest
+</span><a href="#local-6989586621679214789"><span class="hs-identifier hs-var">xrest</span></a></span><span> </span><span class="annot"><span class="annottext">HList g rest
+HList g rest
+</span><a href="#local-6989586621679214797"><span class="hs-identifier hs-var">yrest</span></a></span><span>
+</span><span id="line-155"></span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hzipWith"><span class="hs-identifier hs-var">hzipWith</span></a></span><span> </span><span class="annot"><span class="annottext">forall (t :: k). f t -&gt; g t -&gt; h t
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">HList f ts
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span> </span><span class="annot"><span class="annottext">HList g ts
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HList h ts
+HList h '[]
+forall {k} (f :: k -&gt; *). HList f '[]
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span>
+</span><span id="line-156"></span><span>
+</span><span id="line-157"></span><span class="annot"><span class="hs-comment">{-| Convert an `HList` of `Const` into a normal list. -}</span></span><span>
+</span><span id="line-158"></span><span id="local-6989586621679214622"><span id="local-6989586621679214624"><span class="annot"><a href="Data.SignTyped.Type.HList.html#htoList"><span class="hs-identifier hs-type">htoList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Const</span></span><span> </span><span class="annot"><a href="#local-6989586621679214622"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679214624"><span class="hs-identifier hs-type">ts</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679214622"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-159"></span><span id="htoList"><span class="annot"><span class="annottext">htoList :: forall {k} a (ts :: [k]). HList (Const a) ts -&gt; [a]
+</span><a href="Data.SignTyped.Type.HList.html#htoList"><span class="hs-identifier hs-var hs-var">htoList</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Const</span></span><span> </span><span id="local-6989586621679214802"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679214802"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#%3A%2F"><span class="hs-operator hs-type">:/</span></a></span><span> </span><span id="local-6989586621679214803"><span class="annot"><span class="annottext">HList (Const a) rest
+</span><a href="#local-6989586621679214803"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679214802"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; [a] -&gt; [a]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">HList (Const a) rest -&gt; [a]
+forall {k} a (ts :: [k]). HList (Const a) ts -&gt; [a]
+</span><a href="Data.SignTyped.Type.HList.html#htoList"><span class="hs-identifier hs-var">htoList</span></a></span><span> </span><span class="annot"><span class="annottext">HList (Const a) rest
+</span><a href="#local-6989586621679214803"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><span id="line-160"></span><span class="annot"><a href="Data.SignTyped.Type.HList.html#htoList"><span class="hs-identifier hs-var">htoList</span></a></span><span> </span><span class="annot"><span class="annottext">HList (Const a) ts
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-161"></span><span>
+</span><span id="line-162"></span><span class="annot"><span class="hs-comment">{-| Convert a normal list into an `HList` of `Const`. -}</span></span><span>
+</span><span id="line-163"></span><span id="local-6989586621679214630"><span class="annot"><a href="Data.SignTyped.Type.HList.html#hfromList"><span class="hs-identifier hs-type">hfromList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679214630"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-type">Some</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Const</span></span><span> </span><span class="annot"><a href="#local-6989586621679214630"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span></span><span>
+</span><span id="line-164"></span><span id="hfromList"><span class="annot"><span class="annottext">hfromList :: forall {k} a. [a] -&gt; Some (HList (Const a))
+</span><a href="Data.SignTyped.Type.HList.html#hfromList"><span class="hs-identifier hs-var hs-var">hfromList</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HList (Const a) '[] -&gt; Some (HList (Const a))
+forall {k} (f :: k -&gt; *) (t :: k). f t -&gt; Some f
+</span><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-var">Some</span></a></span><span> </span><span class="annot"><span class="annottext">HList (Const a) '[]
+forall {k} (f :: k -&gt; *). HList f '[]
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span>
+</span><span id="line-165"></span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hfromList"><span class="hs-identifier hs-var">hfromList</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679214805"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679214805"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679214806"><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679214806"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Some (HList (Const a))
+-&gt; (forall (t :: [k]). HList (Const a) t -&gt; Some (HList (Const a)))
+-&gt; Some (HList (Const a))
+forall {k} (f :: k -&gt; *) r.
+Some f -&gt; (forall (t :: k). f t -&gt; r) -&gt; r
+</span><a href="Data.SignTyped.Type.Some.html#withSome"><span class="hs-identifier hs-var">withSome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[a] -&gt; Some (HList (Const a))
+forall {k} a. [a] -&gt; Some (HList (Const a))
+</span><a href="Data.SignTyped.Type.HList.html#hfromList"><span class="hs-identifier hs-var">hfromList</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
+</span><a href="#local-6989586621679214806"><span class="hs-identifier hs-var">rest</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HList (Const a) (Any : t) -&gt; Some (HList (Const a))
+forall {k} (f :: k -&gt; *) (t :: k). f t -&gt; Some f
+</span><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-var">Some</span></a></span><span> </span><span class="annot"><span class="annottext">(HList (Const a) (Any : t) -&gt; Some (HList (Const a)))
+-&gt; (HList (Const a) t -&gt; HList (Const a) (Any : t))
+-&gt; HList (Const a) t
+-&gt; Some (HList (Const a))
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; Const a Any
+forall {k} a (b :: k). a -&gt; Const a b
+</span><span class="hs-identifier hs-var">Const</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679214805"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-operator">:/</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-166"></span><span>
+</span><span id="line-167"></span><span class="annot"><span class="hs-comment">{-| Convert a normal list of `Some`s into an `HList`.
+
+    The name refers to the fact that, similar to `sequenceA`, the effect of this function can be seen as
+a transposition of containers. -}</span></span><span>
+</span><span id="line-171"></span><span id="local-6989586621679214639"><span class="annot"><a href="Data.SignTyped.Type.HList.html#hsequenceSome"><span class="hs-identifier hs-type">hsequenceSome</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-type">Some</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214639"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-type">Some</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679214639"><span class="hs-identifier hs-type">f</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-172"></span><span id="hsequenceSome"><span class="annot"><span class="annottext">hsequenceSome :: forall {k} (f :: k -&gt; *). [Some f] -&gt; Some (HList f)
+</span><a href="Data.SignTyped.Type.HList.html#hsequenceSome"><span class="hs-identifier hs-var hs-var">hsequenceSome</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">HList f '[] -&gt; Some (HList f)
+forall {k} (f :: k -&gt; *) (t :: k). f t -&gt; Some f
+</span><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-var">Some</span></a></span><span> </span><span class="annot"><span class="annottext">HList f '[]
+forall {k} (f :: k -&gt; *). HList f '[]
+</span><a href="Data.SignTyped.Type.HList.html#HEnd"><span class="hs-identifier hs-var">HEnd</span></a></span><span>
+</span><span id="line-173"></span><span class="annot"><a href="Data.SignTyped.Type.HList.html#hsequenceSome"><span class="hs-identifier hs-var">hsequenceSome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-type">Some</span></a></span><span> </span><span id="local-6989586621679214808"><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214808"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679214809"><span class="annot"><span class="annottext">[Some f]
+</span><a href="#local-6989586621679214809"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Some (HList f)
+-&gt; (forall (t :: [k]). HList f t -&gt; Some (HList f))
+-&gt; Some (HList f)
+forall {k} (f :: k -&gt; *) r.
+Some f -&gt; (forall (t :: k). f t -&gt; r) -&gt; r
+</span><a href="Data.SignTyped.Type.Some.html#withSome"><span class="hs-identifier hs-var">withSome</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Some f] -&gt; Some (HList f)
+forall {k} (f :: k -&gt; *). [Some f] -&gt; Some (HList f)
+</span><a href="Data.SignTyped.Type.HList.html#hsequenceSome"><span class="hs-identifier hs-var">hsequenceSome</span></a></span><span> </span><span class="annot"><span class="annottext">[Some f]
+</span><a href="#local-6989586621679214809"><span class="hs-identifier hs-var">rest</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HList f (t : t) -&gt; Some (HList f)
+forall {k} (f :: k -&gt; *) (t :: k). f t -&gt; Some f
+</span><a href="Data.SignTyped.Type.Some.html#Some"><span class="hs-identifier hs-var">Some</span></a></span><span> </span><span class="annot"><span class="annottext">(HList f (t : t) -&gt; Some (HList f))
+-&gt; (HList f t -&gt; HList f (t : t)) -&gt; HList f t -&gt; Some (HList f)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">f t
+</span><a href="#local-6989586621679214808"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-operator">:/</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-174"></span></pre></body></html>

@@ -1,0 +1,525 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.SignTyped.Hashing</span><span>
+</span><span id="line-2"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.SignTyped.Hashing.html#hashEthValue"><span class="hs-identifier">hashEthValue</span></a></span><span>
+</span><span id="line-3"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Hashing.html#hashEthStruct"><span class="hs-identifier">hashEthStruct</span></a></span><span>
+</span><span id="line-4"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Hashing.html#structLocalContext"><span class="hs-identifier">structLocalContext</span></a></span><span>
+</span><span id="line-5"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.SignTyped.Hashing.html#structTypeFullSignature"><span class="hs-identifier">structTypeFullSignature</span></a></span><span>
+</span><span id="line-6"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.ST</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Foldable</span></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Functor.Const</span></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Maybe</span></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.STRef</span></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HList.html"><span class="hs-identifier">Data.SignTyped.Type.HList</span></a></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.HMap.html"><span class="hs-identifier">Data.SignTyped.Type.HMap</span></a></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.SName.html"><span class="hs-identifier">Data.SignTyped.Type.SName</span></a></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Structure.html"><span class="hs-identifier">Data.SignTyped.Structure</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.SignTyped.Util.html"><span class="hs-identifier">Data.SignTyped.Util</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.ByteString</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">BS</span></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Lazy</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Text</span></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text.Encoding</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Text.Encoding</span></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-comment">{- In this module, we temporarily store `error` values in maps, so we need them to be lazy. -}</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="annot"><span class="hs-comment">{-| Produce the hash of the data to be signed.
+
+    This corresponds to the @encodeData@ operation of the specification. -}</span></span><span>
+</span><span id="line-30"></span><span id="local-6989586621679217777"><span id="local-6989586621679217779"><span class="annot"><a href="Data.SignTyped.Hashing.html#hashEthValue"><span class="hs-identifier hs-type">hashEthValue</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Structure.html#TypeContext"><span class="hs-identifier hs-type">TypeContext</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217777"><span class="hs-identifier hs-type">ctx</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Structure.html#EthType"><span class="hs-identifier hs-type">EthType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217779"><span class="hs-identifier hs-type">rep</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Structure.html#EthValue"><span class="hs-identifier hs-type">EthValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217777"><span class="hs-identifier hs-type">ctx</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217779"><span class="hs-identifier hs-type">rep</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span></span></span><span>
+</span><span id="line-35"></span><span id="hashEthValue"><span class="annot"><span class="annottext">hashEthValue :: forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+TypeContext ctx -&gt; EthType rep -&gt; EthValue ctx rep -&gt; ByteString
+</span><a href="Data.SignTyped.Hashing.html#hashEthValue"><span class="hs-identifier hs-var hs-var">hashEthValue</span></a></span></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Structure.html#EthTypeAtomic"><span class="hs-identifier hs-type">EthTypeAtomic</span></a></span><span> </span><span id="local-6989586621679217916"><span class="annot"><span class="annottext">AtomicEthType t
+</span><a href="#local-6989586621679217916"><span class="hs-identifier hs-var">atomType</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Structure.html#EthValueAtomic"><span class="hs-identifier hs-type">EthValueAtomic</span></a></span><span> </span><span id="local-6989586621679217918"><span class="annot"><span class="annottext">t
+</span><a href="#local-6989586621679217918"><span class="hs-identifier hs-var">value</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-36"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">AtomicEthType t
+</span><a href="#local-6989586621679217916"><span class="hs-identifier hs-var">atomType</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-37"></span><span>        </span><span class="annot"><span class="annottext">AtomicEthType t
+</span><a href="Data.SignTyped.Structure.html#AtomicEthTypeBool"><span class="hs-identifier hs-var">AtomicEthTypeBool</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-38"></span><span>            </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">t
+Bool
+</span><a href="#local-6989586621679217918"><span class="hs-identifier hs-var">value</span></a></span><span>
+</span><span id="line-39"></span><span>                </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; ByteString
+</span><a href="Data.SignTyped.Util.html#integer256"><span class="hs-identifier hs-var">integer256</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">1</span></span><span>
+</span><span id="line-40"></span><span>                </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; ByteString
+</span><a href="Data.SignTyped.Util.html#integer256"><span class="hs-identifier hs-var">integer256</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-41"></span><span>        </span><span class="annot"><a href="Data.SignTyped.Structure.html#AtomicEthTypeInteger"><span class="hs-identifier hs-type">AtomicEthTypeInteger</span></a></span><span> </span><span class="annot"><span class="annottext">AtomicIntegerSignedness
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">AtomicIntegerBitSize
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-42"></span><span>            </span><span class="annot"><span class="annottext">Integer -&gt; ByteString
+</span><a href="Data.SignTyped.Util.html#integer256"><span class="hs-identifier hs-var">integer256</span></a></span><span> </span><span class="annot"><span class="annottext">t
+Integer
+</span><a href="#local-6989586621679217918"><span class="hs-identifier hs-var">value</span></a></span><span>
+</span><span id="line-43"></span><span>        </span><span class="annot"><a href="Data.SignTyped.Structure.html#AtomicEthTypeBytes"><span class="hs-identifier hs-type">AtomicEthTypeBytes</span></a></span><span> </span><span class="annot"><span class="annottext">AtomicBytesSubtype
+</span><a href="Data.SignTyped.Structure.html#AtomicBytesSubtypeAddress"><span class="hs-identifier hs-var">AtomicBytesSubtypeAddress</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-44"></span><span>            </span><span class="annot"><span class="annottext">ByteString
+</span><span class="hs-string">&quot;\0\0\0\0\0\0\0\0\0\0\0\0&quot;</span></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString -&gt; ByteString
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">t
+ByteString
+</span><a href="#local-6989586621679217918"><span class="hs-identifier hs-var">value</span></a></span><span>
+</span><span id="line-45"></span><span>        </span><span class="annot"><a href="Data.SignTyped.Structure.html#AtomicEthTypeBytes"><span class="hs-identifier hs-type">AtomicEthTypeBytes</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Structure.html#AtomicBytesSubtypeShortBytes"><span class="hs-identifier hs-type">AtomicBytesSubtypeShortBytes</span></a></span><span> </span><span class="annot"><span class="annottext">AtomicIntegerBitSize
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-46"></span><span>            </span><span class="annot"><span class="annottext">t
+ByteString
+</span><a href="#local-6989586621679217918"><span class="hs-identifier hs-var">value</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString -&gt; ByteString
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">AtomicIntegerBitSize -&gt; Word8 -&gt; ByteString
+</span><span class="hs-identifier hs-var">BS.replicate</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AtomicIntegerBitSize
+</span><span class="hs-number">32</span></span><span> </span><span class="annot"><span class="annottext">AtomicIntegerBitSize
+-&gt; AtomicIntegerBitSize -&gt; AtomicIntegerBitSize
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; AtomicIntegerBitSize
+</span><span class="hs-identifier hs-var">BS.length</span></span><span> </span><span class="annot"><span class="annottext">t
+ByteString
+</span><a href="#local-6989586621679217918"><span class="hs-identifier hs-var">value</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Word8
+</span><span class="hs-number">0</span></span><span>
+</span><span id="line-47"></span><span>        </span><span class="annot"><a href="Data.SignTyped.Structure.html#AtomicEthTypeBytes"><span class="hs-identifier hs-type">AtomicEthTypeBytes</span></a></span><span> </span><span class="annot"><span class="annottext">AtomicBytesSubtype
+</span><a href="Data.SignTyped.Structure.html#AtomicBytesSubtypeLongBytes"><span class="hs-identifier hs-var">AtomicBytesSubtypeLongBytes</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-48"></span><span>            </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString
+</span><a href="Data.SignTyped.Util.html#keccak256"><span class="hs-identifier hs-var">keccak256</span></a></span><span> </span><span class="annot"><span class="annottext">t
+ByteString
+</span><a href="#local-6989586621679217918"><span class="hs-identifier hs-var">value</span></a></span><span>
+</span><span id="line-49"></span><span>        </span><span class="annot"><span class="annottext">AtomicEthType t
+</span><a href="Data.SignTyped.Structure.html#AtomicEthTypeString"><span class="hs-identifier hs-var">AtomicEthTypeString</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-50"></span><span>            </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString
+</span><a href="Data.SignTyped.Util.html#keccak256"><span class="hs-identifier hs-var">keccak256</span></a></span><span> </span><span class="annot"><span class="annottext">(ByteString -&gt; ByteString) -&gt; ByteString -&gt; ByteString
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; ByteString
+</span><span class="hs-identifier hs-var">Text.Encoding.encodeUtf8</span></span><span> </span><span class="annot"><span class="annottext">t
+Text
+</span><a href="#local-6989586621679217918"><span class="hs-identifier hs-var">value</span></a></span><span>
+</span><span id="line-51"></span><span class="annot"><a href="Data.SignTyped.Hashing.html#hashEthValue"><span class="hs-identifier hs-var">hashEthValue</span></a></span><span> </span><span id="local-6989586621679217947"><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679217947"><span class="hs-identifier hs-var">tc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Structure.html#EthTypeArray"><span class="hs-identifier hs-type">EthTypeArray</span></a></span><span> </span><span id="local-6989586621679217954"><span class="annot"><span class="annottext">EthType rep1
+</span><a href="#local-6989586621679217954"><span class="hs-identifier hs-var">elemType</span></a></span></span><span> </span><span class="annot"><span class="annottext">Maybe AtomicIntegerBitSize
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Structure.html#EthValueArray"><span class="hs-identifier hs-type">EthValueArray</span></a></span><span> </span><span id="local-6989586621679217956"><span class="annot"><span class="annottext">[EthValue ctx rep1]
+</span><a href="#local-6989586621679217956"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString
+</span><a href="Data.SignTyped.Util.html#keccak256"><span class="hs-identifier hs-var">keccak256</span></a></span><span> </span><span class="annot"><span class="annottext">(ByteString -&gt; ByteString) -&gt; ByteString -&gt; ByteString
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-53"></span><span>        </span><span class="annot"><span class="annottext">(EthValue ctx rep1 -&gt; ByteString)
+-&gt; [EthValue ctx rep1] -&gt; ByteString
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; [a] -&gt; m
+forall (t :: * -&gt; *) m a.
+(Foldable t, Monoid m) =&gt;
+(a -&gt; m) -&gt; t a -&gt; m
+</span><span class="hs-identifier hs-var">foldMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeContext ctx -&gt; EthType rep1 -&gt; EthValue ctx rep1 -&gt; ByteString
+forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+TypeContext ctx -&gt; EthType rep -&gt; EthValue ctx rep -&gt; ByteString
+</span><a href="Data.SignTyped.Hashing.html#hashEthValue"><span class="hs-identifier hs-var">hashEthValue</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679217947"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">EthType rep1
+</span><a href="#local-6989586621679217954"><span class="hs-identifier hs-var">elemType</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[EthValue ctx rep1]
+</span><a href="#local-6989586621679217956"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-54"></span><span class="annot"><a href="Data.SignTyped.Hashing.html#hashEthValue"><span class="hs-identifier hs-var">hashEthValue</span></a></span><span> </span><span id="local-6989586621679217958"><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679217958"><span class="hs-identifier hs-var">tc</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Structure.html#EthTypeStruct"><span class="hs-identifier hs-type">EthTypeStruct</span></a></span><span> </span><span id="local-6989586621679217961"><span class="annot"><span class="annottext">SName typename
+</span><a href="#local-6989586621679217961"><span class="hs-identifier hs-var">sname</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Structure.html#EthValueStruct"><span class="hs-identifier hs-type">EthValueStruct</span></a></span><span> </span><span id="local-6989586621679217963"><span class="annot"><span class="annottext">HList (EthValue ctx) (Lookup typename ctx)
+</span><a href="#local-6989586621679217963"><span class="hs-identifier hs-var">memVals</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-55"></span><span>    </span><span class="annot"><span class="annottext">TypeContext ctx
+-&gt; SName typename
+-&gt; HList (EthValue ctx) (Lookup typename ctx)
+-&gt; ByteString
+forall (ctx :: TMap Symbol [EthRepr]) (typename :: Symbol).
+TypeContext ctx
+-&gt; SName typename
+-&gt; HList (EthValue ctx) (Lookup typename ctx)
+-&gt; ByteString
+</span><a href="Data.SignTyped.Hashing.html#hashEthStruct"><span class="hs-identifier hs-var">hashEthStruct</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679217958"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">SName typename
+</span><a href="#local-6989586621679217961"><span class="hs-identifier hs-var">sname</span></a></span><span> </span><span class="annot"><span class="annottext">HList (EthValue ctx) (Lookup typename ctx)
+</span><a href="#local-6989586621679217963"><span class="hs-identifier hs-var">memVals</span></a></span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="annot"><span class="hs-comment">{-| Produce the hash of the struct value to be signed.
+
+    This corresponds to the @hashStruct@ operation of the specification. -}</span></span><span>
+</span><span id="line-60"></span><span id="local-6989586621679217810"><span id="local-6989586621679217811"><span class="annot"><a href="Data.SignTyped.Hashing.html#hashEthStruct"><span class="hs-identifier hs-type">hashEthStruct</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Structure.html#TypeContext"><span class="hs-identifier hs-type">TypeContext</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217810"><span class="hs-identifier hs-type">ctx</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Type.SName.html#SName"><span class="hs-identifier hs-type">SName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217811"><span class="hs-identifier hs-type">typename</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Type.HList.html#HList"><span class="hs-identifier hs-type">HList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Structure.html#EthValue"><span class="hs-identifier hs-type">EthValue</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217810"><span class="hs-identifier hs-type">ctx</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Type.HMap.html#Lookup"><span class="hs-identifier hs-type">Lookup</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217811"><span class="hs-identifier hs-type">typename</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217810"><span class="hs-identifier hs-type">ctx</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-64"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span></span></span><span>
+</span><span id="line-65"></span><span id="hashEthStruct"><span class="annot"><span class="annottext">hashEthStruct :: forall (ctx :: TMap Symbol [EthRepr]) (typename :: Symbol).
+TypeContext ctx
+-&gt; SName typename
+-&gt; HList (EthValue ctx) (Lookup typename ctx)
+-&gt; ByteString
+</span><a href="Data.SignTyped.Hashing.html#hashEthStruct"><span class="hs-identifier hs-var hs-var">hashEthStruct</span></a></span></span><span> </span><span id="local-6989586621679217966"><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679217966"><span class="hs-identifier hs-var">tc</span></a></span></span><span> </span><span id="local-6989586621679217967"><span class="annot"><span class="annottext">SName typename
+</span><a href="#local-6989586621679217967"><span class="hs-identifier hs-var">sname</span></a></span></span><span> </span><span id="local-6989586621679217968"><span class="annot"><span class="annottext">HList (EthValue ctx) (Lookup typename ctx)
+</span><a href="#local-6989586621679217968"><span class="hs-identifier hs-var">memVals</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-66"></span><span>    </span><span class="annot"><span class="annottext">TypeContext ctx
+-&gt; SName typename
+-&gt; (StructDef (Lookup typename ctx) -&gt; ByteString)
+-&gt; ByteString
+forall (ctx :: TMap Symbol [EthRepr]) (typename :: Symbol) r.
+TypeContext ctx
+-&gt; SName typename -&gt; (StructDef (Lookup typename ctx) -&gt; r) -&gt; r
+</span><a href="Data.SignTyped.Structure.html#withStructDef"><span class="hs-identifier hs-var">withStructDef</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679217966"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">SName typename
+</span><a href="#local-6989586621679217967"><span class="hs-identifier hs-var">sname</span></a></span><span> </span><span class="annot"><span class="annottext">((StructDef (Lookup typename ctx) -&gt; ByteString) -&gt; ByteString)
+-&gt; (StructDef (Lookup typename ctx) -&gt; ByteString) -&gt; ByteString
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679217970"><span class="annot"><span class="annottext">StructDef (Lookup typename ctx)
+</span><a href="#local-6989586621679217970"><span class="hs-identifier hs-var">memDefs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-67"></span><span>        </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString
+</span><a href="Data.SignTyped.Util.html#keccak256"><span class="hs-identifier hs-var">keccak256</span></a></span><span> </span><span class="annot"><span class="annottext">(ByteString -&gt; ByteString) -&gt; ByteString -&gt; ByteString
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-68"></span><span>            </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString
+</span><a href="Data.SignTyped.Util.html#keccak256"><span class="hs-identifier hs-var">keccak256</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeContext ctx -&gt; SName typename -&gt; ByteString
+forall (ctx :: TMap Symbol [EthRepr]) (typename :: Symbol).
+TypeContext ctx -&gt; SName typename -&gt; ByteString
+</span><a href="Data.SignTyped.Hashing.html#structTypeFullSignature"><span class="hs-identifier hs-var">structTypeFullSignature</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679217966"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">SName typename
+</span><a href="#local-6989586621679217967"><span class="hs-identifier hs-var">sname</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>          </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString -&gt; ByteString
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span>
+</span><span id="line-70"></span><span>            </span><span class="annot"><span class="annottext">(forall (t :: EthRepr).
+ Product MemberDef (EthValue ctx) t -&gt; ByteString)
+-&gt; HList (Product MemberDef (EthValue ctx)) (Lookup typename ctx)
+-&gt; ByteString
+forall {k} m (f :: k -&gt; *) (ts :: [k]).
+Monoid m =&gt;
+(forall (t :: k). f t -&gt; m) -&gt; HList f ts -&gt; m
+</span><a href="Data.SignTyped.Type.HList.html#hfoldMap"><span class="hs-identifier hs-var">hfoldMap</span></a></span><span>
+</span><span id="line-71"></span><span>                </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Pair</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Structure.html#MemberDef"><span class="hs-identifier hs-type">MemberDef</span></a></span><span> </span><span id="local-6989586621679217974"><span class="annot"><span class="annottext">EthType t
+</span><a href="#local-6989586621679217974"><span class="hs-identifier hs-var">mtype</span></a></span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679217975"><span class="annot"><span class="annottext">EthValue ctx t
+</span><a href="#local-6989586621679217975"><span class="hs-identifier hs-var">mval</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TypeContext ctx -&gt; EthType t -&gt; EthValue ctx t -&gt; ByteString
+forall (ctx :: TMap Symbol [EthRepr]) (rep :: EthRepr).
+TypeContext ctx -&gt; EthType rep -&gt; EthValue ctx rep -&gt; ByteString
+</span><a href="Data.SignTyped.Hashing.html#hashEthValue"><span class="hs-identifier hs-var">hashEthValue</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679217966"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">EthType t
+</span><a href="#local-6989586621679217974"><span class="hs-identifier hs-var">mtype</span></a></span><span> </span><span class="annot"><span class="annottext">EthValue ctx t
+</span><a href="#local-6989586621679217975"><span class="hs-identifier hs-var">mval</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span>                </span><span class="hs-special">(</span><span class="annot"><span class="annottext">StructDef (Lookup typename ctx)
+-&gt; HList (EthValue ctx) (Lookup typename ctx)
+-&gt; HList (Product MemberDef (EthValue ctx)) (Lookup typename ctx)
+forall {k} (f :: k -&gt; *) (ts :: [k]) (g :: k -&gt; *).
+HList f ts -&gt; HList g ts -&gt; HList (Product f g) ts
+</span><a href="Data.SignTyped.Type.HList.html#hzip"><span class="hs-identifier hs-var">hzip</span></a></span><span> </span><span class="annot"><span class="annottext">StructDef (Lookup typename ctx)
+</span><a href="#local-6989586621679217970"><span class="hs-identifier hs-var">memDefs</span></a></span><span> </span><span class="annot"><span class="annottext">HList (EthValue ctx) (Lookup typename ctx)
+</span><a href="#local-6989586621679217968"><span class="hs-identifier hs-var">memVals</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="annot"><span class="hs-comment">{-| Collects all structs transitively used in defining the current one, including itself, and returns a map
+from struct names to their signatures.
+
+    For example, given this set of definitions in the type context:
+
+    @
+        struct Person {
+            string name;
+            address wallet;
+        }
+
+        struct Mail {
+            Person from;
+            Person to;
+            string contents;
+        }
+    @
+
+    This function will return these results:
+
+    @
+        structLocalContext tc (SName \@\&quot;Person\&quot;) =
+            fromList
+                [(\&quot;Person\&quot;, &quot;Person(string name,address wallet)&quot;)]
+
+        structLocalContext tc (SName \@\&quot;Mail\&quot;) =
+            fromList
+                [(\&quot;Mail\&quot;,   &quot;Mail(Person from,Person to,string contents)&quot;),
+                 (\&quot;Person\&quot;, &quot;Person(string name,address wallet)&quot;)]
+    @
+
+    This function is used as part of `structTypeFullSignature`. -}</span></span><span>
+</span><span id="line-106"></span><span id="local-6989586621679217832"><span id="local-6989586621679217833"><span class="annot"><a href="Data.SignTyped.Hashing.html#structLocalContext"><span class="hs-identifier hs-type">structLocalContext</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-107"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Structure.html#TypeContext"><span class="hs-identifier hs-type">TypeContext</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217832"><span class="hs-identifier hs-type">ctx</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-108"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Type.SName.html#SName"><span class="hs-identifier hs-type">SName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217833"><span class="hs-identifier hs-type">typename</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-109"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Map.Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text.Text</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span></span></span><span>
+</span><span id="line-110"></span><span id="structLocalContext"><span class="annot"><span class="annottext">structLocalContext :: forall (ctx :: TMap Symbol [EthRepr]) (typename :: Symbol).
+TypeContext ctx -&gt; SName typename -&gt; Map Text ByteString
+</span><a href="Data.SignTyped.Hashing.html#structLocalContext"><span class="hs-identifier hs-var hs-var">structLocalContext</span></a></span></span><span> </span><span id="local-6989586621679217977"><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679217977"><span class="hs-identifier hs-var">tc</span></a></span></span><span> </span><span id="local-6989586621679217978"><span class="annot"><span class="annottext">SName typename
+</span><a href="#local-6989586621679217978"><span class="hs-identifier hs-var">rootType</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-111"></span><span>    </span><span class="annot"><span class="annottext">(forall s. ST s (Map Text ByteString)) -&gt; Map Text ByteString
+forall a. (forall s. ST s a) -&gt; a
+</span><span class="hs-identifier hs-var">runST</span></span><span> </span><span class="annot"><span class="annottext">((forall s. ST s (Map Text ByteString)) -&gt; Map Text ByteString)
+-&gt; (forall s. ST s (Map Text ByteString)) -&gt; Map Text ByteString
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-112"></span><span>        </span><span id="local-6989586621679217983"><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+</span><a href="#local-6989586621679217983"><span class="hs-identifier hs-var">cache</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Map Text ByteString -&gt; ST s (STRef s (Map Text ByteString))
+forall a s. a -&gt; ST s (STRef s a)
+</span><span class="hs-identifier hs-var">newSTRef</span></span><span> </span><span class="annot"><span class="annottext">Map Text ByteString
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span>
+</span><span id="line-113"></span><span>        </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString) -&gt; SName typename -&gt; ST s ()
+forall s (t :: Symbol).
+STRef s (Map Text ByteString) -&gt; SName t -&gt; ST s ()
+</span><a href="#local-6989586621679217986"><span class="hs-identifier hs-var">goStruct</span></a></span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+</span><a href="#local-6989586621679217983"><span class="hs-identifier hs-var">cache</span></a></span><span> </span><span class="annot"><span class="annottext">SName typename
+</span><a href="#local-6989586621679217978"><span class="hs-identifier hs-var">rootType</span></a></span><span>
+</span><span id="line-114"></span><span>        </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString) -&gt; ST s (Map Text ByteString)
+forall s a. STRef s a -&gt; ST s a
+</span><span class="hs-identifier hs-var">readSTRef</span></span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+</span><a href="#local-6989586621679217983"><span class="hs-identifier hs-var">cache</span></a></span><span>
+</span><span id="line-115"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-116"></span><span>    </span><span id="local-6989586621679217847"><span id="local-6989586621679217848"><span class="annot"><a href="#local-6989586621679217986"><span class="hs-identifier hs-type">goStruct</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">STRef</span></span><span> </span><span class="annot"><a href="#local-6989586621679217847"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map.Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text.Text</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Type.SName.html#SName"><span class="hs-identifier hs-type">SName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217848"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ST</span></span><span> </span><span class="annot"><a href="#local-6989586621679217847"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span></span><span>
+</span><span id="line-117"></span><span>    </span><span id="local-6989586621679217986"><span class="annot"><span class="annottext">goStruct :: forall s (t :: Symbol).
+STRef s (Map Text ByteString) -&gt; SName t -&gt; ST s ()
+</span><a href="#local-6989586621679217986"><span class="hs-identifier hs-var hs-var">goStruct</span></a></span></span><span> </span><span id="local-6989586621679218007"><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+</span><a href="#local-6989586621679218007"><span class="hs-identifier hs-var">cache</span></a></span></span><span> </span><span id="local-6989586621679218008"><span class="annot"><span class="annottext">SName t
+</span><a href="#local-6989586621679218008"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-118"></span><span>        </span><span class="annot"><span class="annottext">TypeContext ctx
+-&gt; SName t -&gt; (StructDef (Lookup t ctx) -&gt; ST s ()) -&gt; ST s ()
+forall (ctx :: TMap Symbol [EthRepr]) (typename :: Symbol) r.
+TypeContext ctx
+-&gt; SName typename -&gt; (StructDef (Lookup typename ctx) -&gt; r) -&gt; r
+</span><a href="Data.SignTyped.Structure.html#withStructDef"><span class="hs-identifier hs-var">withStructDef</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679217977"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">SName t
+</span><a href="#local-6989586621679218008"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">((StructDef (Lookup t ctx) -&gt; ST s ()) -&gt; ST s ())
+-&gt; (StructDef (Lookup t ctx) -&gt; ST s ()) -&gt; ST s ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679218009"><span class="annot"><span class="annottext">StructDef (Lookup t ctx)
+</span><a href="#local-6989586621679218009"><span class="hs-identifier hs-var">memDefs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-119"></span><span>            </span><span id="local-6989586621679218010"><span class="annot"><span class="annottext">Map Text ByteString
+</span><a href="#local-6989586621679218010"><span class="hs-identifier hs-var">cacheValue</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString) -&gt; ST s (Map Text ByteString)
+forall s a. STRef s a -&gt; ST s a
+</span><span class="hs-identifier hs-var">readSTRef</span></span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+</span><a href="#local-6989586621679218007"><span class="hs-identifier hs-var">cache</span></a></span><span>
+</span><span id="line-120"></span><span>            </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Map Text ByteString -&gt; Maybe ByteString
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SName t -&gt; Text
+forall (sym :: Symbol). SName sym -&gt; Text
+</span><a href="Data.SignTyped.Type.SName.html#fromSName"><span class="hs-identifier hs-var">fromSName</span></a></span><span> </span><span class="annot"><span class="annottext">SName t
+</span><a href="#local-6989586621679218008"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map Text ByteString
+</span><a href="#local-6989586621679218010"><span class="hs-identifier hs-var">cacheValue</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-121"></span><span>                </span><span class="annot"><span class="annottext">Maybe ByteString
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-122"></span><span>                    </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+-&gt; (Map Text ByteString -&gt; Map Text ByteString) -&gt; ST s ()
+forall s a. STRef s a -&gt; (a -&gt; a) -&gt; ST s ()
+</span><span class="hs-identifier hs-var">modifySTRef'</span></span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+</span><a href="#local-6989586621679218007"><span class="hs-identifier hs-var">cache</span></a></span><span> </span><span class="annot"><span class="annottext">((Map Text ByteString -&gt; Map Text ByteString) -&gt; ST s ())
+-&gt; (Map Text ByteString -&gt; Map Text ByteString) -&gt; ST s ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-123"></span><span>                        </span><span class="annot"><span class="annottext">Text -&gt; ByteString -&gt; Map Text ByteString -&gt; Map Text ByteString
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span>
+</span><span id="line-124"></span><span>                            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SName t -&gt; Text
+forall (sym :: Symbol). SName sym -&gt; Text
+</span><a href="Data.SignTyped.Type.SName.html#fromSName"><span class="hs-identifier hs-var">fromSName</span></a></span><span> </span><span class="annot"><span class="annottext">SName t
+</span><a href="#local-6989586621679218008"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-125"></span><span>                            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Char] -&gt; ByteString
+forall a. HasCallStack =&gt; [Char] -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><span class="hs-string">&quot;pending&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-126"></span><span>                    </span><span id="local-6989586621679218016"><span class="annot"><span class="annottext">[Text]
+</span><a href="#local-6989586621679218016"><span class="hs-identifier hs-var">mdefStrs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+-&gt; StructDef (Lookup t ctx) -&gt; ST s [Text]
+forall s (reps :: [EthRepr]).
+STRef s (Map Text ByteString) -&gt; StructDef reps -&gt; ST s [Text]
+</span><a href="#local-6989586621679218017"><span class="hs-identifier hs-var">goMembers</span></a></span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+</span><a href="#local-6989586621679218007"><span class="hs-identifier hs-var">cache</span></a></span><span> </span><span class="annot"><span class="annottext">StructDef (Lookup t ctx)
+</span><a href="#local-6989586621679218009"><span class="hs-identifier hs-var">memDefs</span></a></span><span>
+</span><span id="line-127"></span><span>                    </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+-&gt; (Map Text ByteString -&gt; Map Text ByteString) -&gt; ST s ()
+forall s a. STRef s a -&gt; (a -&gt; a) -&gt; ST s ()
+</span><span class="hs-identifier hs-var">modifySTRef'</span></span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+</span><a href="#local-6989586621679218007"><span class="hs-identifier hs-var">cache</span></a></span><span> </span><span class="annot"><span class="annottext">((Map Text ByteString -&gt; Map Text ByteString) -&gt; ST s ())
+-&gt; (Map Text ByteString -&gt; Map Text ByteString) -&gt; ST s ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-128"></span><span>                        </span><span class="annot"><span class="annottext">Text -&gt; ByteString -&gt; Map Text ByteString -&gt; Map Text ByteString
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span>
+</span><span id="line-129"></span><span>                            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SName t -&gt; Text
+forall (sym :: Symbol). SName sym -&gt; Text
+</span><a href="Data.SignTyped.Type.SName.html#fromSName"><span class="hs-identifier hs-var">fromSName</span></a></span><span> </span><span class="annot"><span class="annottext">SName t
+</span><a href="#local-6989586621679218008"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-130"></span><span>                            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text -&gt; ByteString
+</span><span class="hs-identifier hs-var">Text.Encoding.encodeUtf8</span></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; ByteString) -&gt; Text -&gt; ByteString
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">SName t -&gt; Text
+forall (sym :: Symbol). SName sym -&gt; Text
+</span><a href="Data.SignTyped.Type.SName.html#fromSName"><span class="hs-identifier hs-var">fromSName</span></a></span><span> </span><span class="annot"><span class="annottext">SName t
+</span><a href="#local-6989586621679218008"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;(&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Text] -&gt; Text
+</span><span class="hs-identifier hs-var">Text.intercalate</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;,&quot;</span></span><span> </span><span class="annot"><span class="annottext">[Text]
+</span><a href="#local-6989586621679218016"><span class="hs-identifier hs-var">mdefStrs</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot;)&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-131"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-132"></span><span>                    </span><span class="annot"><span class="annottext">() -&gt; ST s ()
+forall a. a -&gt; ST s a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-133"></span><span>    </span><span id="local-6989586621679217864"><span id="local-6989586621679217865"><span class="annot"><a href="#local-6989586621679218017"><span class="hs-identifier hs-type">goMembers</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">STRef</span></span><span> </span><span class="annot"><a href="#local-6989586621679217864"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map.Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text.Text</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Structure.html#StructDef"><span class="hs-identifier hs-type">StructDef</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217865"><span class="hs-identifier hs-type">reps</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ST</span></span><span> </span><span class="annot"><a href="#local-6989586621679217864"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Text.Text</span></span><span class="hs-special">]</span></span></span><span>
+</span><span id="line-134"></span><span>    </span><span id="local-6989586621679218017"><span class="annot"><span class="annottext">goMembers :: forall s (reps :: [EthRepr]).
+STRef s (Map Text ByteString) -&gt; StructDef reps -&gt; ST s [Text]
+</span><a href="#local-6989586621679218017"><span class="hs-identifier hs-var hs-var">goMembers</span></a></span></span><span> </span><span id="local-6989586621679218022"><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+</span><a href="#local-6989586621679218022"><span class="hs-identifier hs-var">cache</span></a></span></span><span> </span><span id="local-6989586621679218023"><span class="annot"><span class="annottext">StructDef reps
+</span><a href="#local-6989586621679218023"><span class="hs-identifier hs-var">memDefs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-135"></span><span>        </span><span class="annot"><span class="annottext">(HList (Const (Maybe Text)) reps -&gt; [Text])
+-&gt; ST s (HList (Const (Maybe Text)) reps) -&gt; ST s [Text]
+forall a b. (a -&gt; b) -&gt; ST s a -&gt; ST s b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Maybe Text] -&gt; [Text]
+forall a. [Maybe a] -&gt; [a]
+</span><span class="hs-identifier hs-var">catMaybes</span></span><span> </span><span class="annot"><span class="annottext">([Maybe Text] -&gt; [Text])
+-&gt; (HList (Const (Maybe Text)) reps -&gt; [Maybe Text])
+-&gt; HList (Const (Maybe Text)) reps
+-&gt; [Text]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">HList (Const (Maybe Text)) reps -&gt; [Maybe Text]
+forall {k} a (ts :: [k]). HList (Const a) ts -&gt; [a]
+</span><a href="Data.SignTyped.Type.HList.html#htoList"><span class="hs-identifier hs-var">htoList</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(ST s (HList (Const (Maybe Text)) reps) -&gt; ST s [Text])
+-&gt; ST s (HList (Const (Maybe Text)) reps) -&gt; ST s [Text]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-136"></span><span>            </span><span class="annot"><span class="annottext">(forall (t :: EthRepr). MemberDef t -&gt; ST s (Const (Maybe Text) t))
+-&gt; StructDef reps -&gt; ST s (HList (Const (Maybe Text)) reps)
+forall {k} (m :: * -&gt; *) (f :: k -&gt; *) (g :: k -&gt; *) (ts :: [k]).
+Applicative m =&gt;
+(forall (t :: k). f t -&gt; m (g t)) -&gt; HList f ts -&gt; m (HList g ts)
+</span><a href="Data.SignTyped.Type.HList.html#htraverse"><span class="hs-identifier hs-var">htraverse</span></a></span><span>
+</span><span id="line-137"></span><span>                </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Data.SignTyped.Structure.html#MemberDef"><span class="hs-identifier hs-type">MemberDef</span></a></span><span> </span><span id="local-6989586621679218033"><span class="annot"><span class="annottext">EthType t
+</span><a href="#local-6989586621679218033"><span class="hs-identifier hs-var">mtype</span></a></span></span><span> </span><span id="local-6989586621679218034"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679218034"><span class="hs-identifier hs-var">nameStr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-138"></span><span>                    </span><span id="local-6989586621679218035"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679218035"><span class="hs-identifier hs-var">typeStr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString) -&gt; EthType t -&gt; ST s Text
+forall s (rep :: EthRepr).
+STRef s (Map Text ByteString) -&gt; EthType rep -&gt; ST s Text
+</span><a href="#local-6989586621679218036"><span class="hs-identifier hs-var">goType</span></a></span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+</span><a href="#local-6989586621679218022"><span class="hs-identifier hs-var">cache</span></a></span><span> </span><span class="annot"><span class="annottext">EthType t
+</span><a href="#local-6989586621679218033"><span class="hs-identifier hs-var">mtype</span></a></span><span>
+</span><span id="line-139"></span><span>                    </span><span class="annot"><span class="annottext">Const (Maybe Text) t -&gt; ST s (Const (Maybe Text) t)
+forall a. a -&gt; ST s a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Const (Maybe Text) t -&gt; ST s (Const (Maybe Text) t))
+-&gt; Const (Maybe Text) t -&gt; ST s (Const (Maybe Text) t)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Maybe Text -&gt; Const (Maybe Text) t
+forall {k} a (b :: k). a -&gt; Const a b
+</span><span class="hs-identifier hs-var">Const</span></span><span> </span><span class="annot"><span class="annottext">(Maybe Text -&gt; Const (Maybe Text) t)
+-&gt; Maybe Text -&gt; Const (Maybe Text) t
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Maybe Text
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; Maybe Text) -&gt; Text -&gt; Maybe Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679218035"><span class="hs-identifier hs-var">typeStr</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679218034"><span class="hs-identifier hs-var">nameStr</span></a></span><span>
+</span><span id="line-140"></span><span>                </span><span class="hs-special">)</span><span>
+</span><span id="line-141"></span><span>                </span><span class="annot"><span class="annottext">StructDef reps
+</span><a href="#local-6989586621679218023"><span class="hs-identifier hs-var">memDefs</span></a></span><span>
+</span><span id="line-142"></span><span>    </span><span id="local-6989586621679217889"><span id="local-6989586621679217890"><span class="annot"><a href="#local-6989586621679218036"><span class="hs-identifier hs-type">goType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">STRef</span></span><span> </span><span class="annot"><a href="#local-6989586621679217889"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map.Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text.Text</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.SignTyped.Structure.html#EthType"><span class="hs-identifier hs-type">EthType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217890"><span class="hs-identifier hs-type">rep</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ST</span></span><span> </span><span class="annot"><a href="#local-6989586621679217889"><span class="hs-identifier hs-type">s</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text.Text</span></span></span></span><span>
+</span><span id="line-143"></span><span>    </span><span id="local-6989586621679218036"><span class="annot"><span class="annottext">goType :: forall s (rep :: EthRepr).
+STRef s (Map Text ByteString) -&gt; EthType rep -&gt; ST s Text
+</span><a href="#local-6989586621679218036"><span class="hs-identifier hs-var hs-var">goType</span></a></span></span><span> </span><span id="local-6989586621679218041"><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+</span><a href="#local-6989586621679218041"><span class="hs-identifier hs-var">cache</span></a></span></span><span> </span><span id="local-6989586621679218042"><span class="annot"><span class="annottext">EthType rep
+</span><a href="#local-6989586621679218042"><span class="hs-identifier hs-var">mtype</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-144"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">EthType rep
+</span><a href="#local-6989586621679218042"><span class="hs-identifier hs-var">mtype</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-145"></span><span>            </span><span class="annot"><a href="Data.SignTyped.Structure.html#EthTypeStruct"><span class="hs-identifier hs-type">EthTypeStruct</span></a></span><span> </span><span id="local-6989586621679218044"><span class="annot"><span class="annottext">SName typename
+</span><a href="#local-6989586621679218044"><span class="hs-identifier hs-var">sname</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString) -&gt; SName typename -&gt; ST s ()
+forall s (t :: Symbol).
+STRef s (Map Text ByteString) -&gt; SName t -&gt; ST s ()
+</span><a href="#local-6989586621679217986"><span class="hs-identifier hs-var">goStruct</span></a></span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+</span><a href="#local-6989586621679218041"><span class="hs-identifier hs-var">cache</span></a></span><span> </span><span class="annot"><span class="annottext">SName typename
+</span><a href="#local-6989586621679218044"><span class="hs-identifier hs-var">sname</span></a></span><span>
+</span><span id="line-146"></span><span>            </span><span class="annot"><a href="Data.SignTyped.Structure.html#EthTypeArray"><span class="hs-identifier hs-type">EthTypeArray</span></a></span><span> </span><span id="local-6989586621679218047"><span class="annot"><span class="annottext">EthType rep1
+</span><a href="#local-6989586621679218047"><span class="hs-identifier hs-var">subtype</span></a></span></span><span> </span><span class="annot"><span class="annottext">Maybe AtomicIntegerBitSize
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ST s Text -&gt; ST s ()
+forall (f :: * -&gt; *) a. Functor f =&gt; f a -&gt; f ()
+</span><span class="hs-identifier hs-var">void</span></span><span> </span><span class="annot"><span class="annottext">(ST s Text -&gt; ST s ()) -&gt; ST s Text -&gt; ST s ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString) -&gt; EthType rep1 -&gt; ST s Text
+forall s (rep :: EthRepr).
+STRef s (Map Text ByteString) -&gt; EthType rep -&gt; ST s Text
+</span><a href="#local-6989586621679218036"><span class="hs-identifier hs-var">goType</span></a></span><span> </span><span class="annot"><span class="annottext">STRef s (Map Text ByteString)
+</span><a href="#local-6989586621679218041"><span class="hs-identifier hs-var">cache</span></a></span><span> </span><span class="annot"><span class="annottext">EthType rep1
+</span><a href="#local-6989586621679218047"><span class="hs-identifier hs-var">subtype</span></a></span><span>
+</span><span id="line-147"></span><span>            </span><span class="annot"><span class="annottext">EthType rep
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">() -&gt; ST s ()
+forall a. a -&gt; ST s a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-148"></span><span>        </span><span class="annot"><span class="annottext">Text -&gt; ST s Text
+forall a. a -&gt; ST s a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; ST s Text) -&gt; Text -&gt; ST s Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">EthType rep -&gt; Text
+forall (rep :: EthRepr). EthType rep -&gt; Text
+</span><a href="Data.SignTyped.Structure.html#ethTypeName"><span class="hs-identifier hs-var">ethTypeName</span></a></span><span> </span><span class="annot"><span class="annottext">EthType rep
+</span><a href="#local-6989586621679218042"><span class="hs-identifier hs-var">mtype</span></a></span><span>
+</span><span id="line-149"></span><span>
+</span><span id="line-150"></span><span class="annot"><span class="hs-comment">{-| Returns the argument of the type hash of the selected struct.
+
+    This corresponds to the @encodeType@ operation in the specification. -}</span></span><span>
+</span><span id="line-153"></span><span id="local-6989586621679217818"><span id="local-6989586621679217819"><span class="annot"><a href="Data.SignTyped.Hashing.html#structTypeFullSignature"><span class="hs-identifier hs-type">structTypeFullSignature</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-154"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Structure.html#TypeContext"><span class="hs-identifier hs-type">TypeContext</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217818"><span class="hs-identifier hs-type">ctx</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-155"></span><span>    </span><span class="annot"><a href="Data.SignTyped.Type.SName.html#SName"><span class="hs-identifier hs-type">SName</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679217819"><span class="hs-identifier hs-type">typename</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-156"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">BS.ByteString</span></span></span></span><span>
+</span><span id="line-157"></span><span id="structTypeFullSignature"><span class="annot"><span class="annottext">structTypeFullSignature :: forall (ctx :: TMap Symbol [EthRepr]) (typename :: Symbol).
+TypeContext ctx -&gt; SName typename -&gt; ByteString
+</span><a href="Data.SignTyped.Hashing.html#structTypeFullSignature"><span class="hs-identifier hs-var hs-var">structTypeFullSignature</span></a></span></span><span> </span><span id="local-6989586621679218056"><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679218056"><span class="hs-identifier hs-var">tc</span></a></span></span><span> </span><span id="local-6989586621679218057"><span class="annot"><span class="annottext">SName typename
+</span><a href="#local-6989586621679218057"><span class="hs-identifier hs-var">rootType</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-158"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679218058"><span class="annot"><span class="annottext">localContext :: Map Text ByteString
+</span><a href="#local-6989586621679218058"><span class="hs-identifier hs-var hs-var">localContext</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TypeContext ctx -&gt; SName typename -&gt; Map Text ByteString
+forall (ctx :: TMap Symbol [EthRepr]) (typename :: Symbol).
+TypeContext ctx -&gt; SName typename -&gt; Map Text ByteString
+</span><a href="Data.SignTyped.Hashing.html#structLocalContext"><span class="hs-identifier hs-var">structLocalContext</span></a></span><span> </span><span class="annot"><span class="annottext">TypeContext ctx
+</span><a href="#local-6989586621679218056"><span class="hs-identifier hs-var">tc</span></a></span><span> </span><span class="annot"><span class="annottext">SName typename
+</span><a href="#local-6989586621679218057"><span class="hs-identifier hs-var">rootType</span></a></span><span>
+</span><span id="line-159"></span><span>        </span><span class="hs-glyph">!</span><span id="local-6989586621679218059"><span class="annot"><span class="annottext">rootDef :: ByteString
+</span><a href="#local-6989586621679218059"><span class="hs-identifier hs-var hs-var">rootDef</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map Text ByteString
+</span><a href="#local-6989586621679218058"><span class="hs-identifier hs-var">localContext</span></a></span><span> </span><span class="annot"><span class="annottext">Map Text ByteString -&gt; Text -&gt; ByteString
+forall k a. Ord k =&gt; Map k a -&gt; k -&gt; a
+</span><span class="hs-operator hs-var">Map.!</span></span><span> </span><span class="annot"><span class="annottext">SName typename -&gt; Text
+forall (sym :: Symbol). SName sym -&gt; Text
+</span><a href="Data.SignTyped.Type.SName.html#fromSName"><span class="hs-identifier hs-var">fromSName</span></a></span><span> </span><span class="annot"><span class="annottext">SName typename
+</span><a href="#local-6989586621679218057"><span class="hs-identifier hs-var">rootType</span></a></span><span>
+</span><span id="line-160"></span><span>        </span><span id="local-6989586621679218061"><span class="annot"><span class="annottext">strippedContext :: Map Text ByteString
+</span><a href="#local-6989586621679218061"><span class="hs-identifier hs-var hs-var">strippedContext</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Map Text ByteString -&gt; Map Text ByteString
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.delete</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SName typename -&gt; Text
+forall (sym :: Symbol). SName sym -&gt; Text
+</span><a href="Data.SignTyped.Type.SName.html#fromSName"><span class="hs-identifier hs-var">fromSName</span></a></span><span> </span><span class="annot"><span class="annottext">SName typename
+</span><a href="#local-6989586621679218057"><span class="hs-identifier hs-var">rootType</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map Text ByteString
+</span><a href="#local-6989586621679218058"><span class="hs-identifier hs-var">localContext</span></a></span><span>
+</span><span id="line-161"></span><span>    </span><span class="hs-keyword">in</span><span>
+</span><span id="line-162"></span><span>    </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679218059"><span class="hs-identifier hs-var">rootDef</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; ByteString -&gt; ByteString
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Map Text ByteString -&gt; ByteString
+forall m. Monoid m =&gt; Map Text m -&gt; m
+forall (t :: * -&gt; *) m. (Foldable t, Monoid m) =&gt; t m -&gt; m
+</span><span class="hs-identifier hs-var">fold</span></span><span> </span><span class="annot"><span class="annottext">Map Text ByteString
+</span><a href="#local-6989586621679218061"><span class="hs-identifier hs-var">strippedContext</span></a></span><span>
+</span><span id="line-163"></span></pre></body></html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# language ExplicitNamespaces #-}</span><span>
+</span><span id="line-2"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- Module       : Data.ByteString.Base16.Types</span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- Copyright    : (c) 2019-2022 Emily Pillmore</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- License      : BSD-style</span><span>
+</span><span id="line-6"></span><span class="hs-comment">--</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- Maintainer   : Emily Pillmore &lt;emilypi@cohomolo.gy&gt;,</span><span>
+</span><span id="line-8"></span><span class="hs-comment">--                sofia-m-a &lt;https://github.com/sofia-m-a&gt;</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Stability    : stable</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Portability  : non-portable</span><span>
+</span><span id="line-11"></span><span class="hs-comment">--</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- This module contains the 'Base16' type definition, 'Alphabet'</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- datatype, alphabet constraints, and various quality of life</span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- combinators for working with 'Base16'-wrapped data.</span><span>
+</span><span id="line-15"></span><span class="hs-comment">--</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Base16.Types</span><span>
+</span><span id="line-17"></span><span class="hs-special">(</span><span> </span><span class="hs-keyword">type</span><span> </span><span class="annot"><a href="Data.Base16.Types.Internal.html#Base16"><span class="hs-identifier">Base16</span></a></span><span>
+</span><span id="line-18"></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Base16.Types.html#assertBase16"><span class="hs-identifier">assertBase16</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Base16.Types.html#extractBase16"><span class="hs-identifier">extractBase16</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Base16.Types.Internal.html"><span class="hs-identifier">Data.Base16.Types.Internal</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Base16.Types.Internal.html#Base16"><span class="hs-identifier">Base16</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- | Assert the provenance of a value.</span><span>
+</span><span id="line-26"></span><span class="hs-comment">--</span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- /Warning/: This is a blind assertion that a particular</span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- value is base16 encoded in some alphabet. If you are not</span><span>
+</span><span id="line-29"></span><span class="hs-comment">-- sure of the provenance of the value, you may experience</span><span>
+</span><span id="line-30"></span><span class="hs-comment">-- odd behavior when attempting to decode. Use at your own</span><span>
+</span><span id="line-31"></span><span class="hs-comment">-- risk. If I see any issues logged on this project from</span><span>
+</span><span id="line-32"></span><span class="hs-comment">-- negligent use of this, Sofia and I will smite you.</span><span>
+</span><span id="line-33"></span><span class="hs-comment">--</span><span>
+</span><span id="line-34"></span><span id="local-6989586621679059422"><span class="annot"><a href="Data.Base16.Types.html#assertBase16"><span class="hs-identifier hs-type">assertBase16</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679059422"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Base16.Types.Internal.html#Base16"><span class="hs-identifier hs-type">Base16</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679059422"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-35"></span><span id="assertBase16"><span class="annot"><span class="annottext">assertBase16 :: forall a. a -&gt; Base16 a
+</span><a href="Data.Base16.Types.html#assertBase16"><span class="hs-identifier hs-var hs-var">assertBase16</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a -&gt; Base16 a
+forall a. a -&gt; Base16 a
+</span><a href="Data.Base16.Types.Internal.html#Base16"><span class="hs-identifier hs-var">Base16</span></a></span><span>
+</span><span id="line-36"></span><span class="hs-pragma">{-# inline</span><span> </span><span class="annot"><a href="Data.Base16.Types.html#assertBase16"><span class="hs-pragma hs-type">assertBase16</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- | Forget that a particular value is Base16-encoded</span><span>
+</span><span id="line-39"></span><span class="hs-comment">--</span><span>
+</span><span id="line-40"></span><span id="local-6989586621679059425"><span class="annot"><a href="Data.Base16.Types.html#extractBase16"><span class="hs-identifier hs-type">extractBase16</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Base16.Types.Internal.html#Base16"><span class="hs-identifier hs-type">Base16</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679059425"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679059425"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-41"></span><span id="extractBase16"><span class="annot"><span class="annottext">extractBase16 :: forall a. Base16 a -&gt; a
+</span><a href="Data.Base16.Types.html#extractBase16"><span class="hs-identifier hs-var hs-var">extractBase16</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Base16.Types.Internal.html#Base16"><span class="hs-identifier hs-type">Base16</span></a></span><span> </span><span id="local-6989586621679059430"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059430"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679059430"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-42"></span><span class="hs-pragma">{-# inline</span><span> </span><span class="annot"><a href="Data.Base16.Types.html#extractBase16"><span class="hs-pragma hs-type">extractBase16</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-43"></span></pre></body></html>

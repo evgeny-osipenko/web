@@ -1,0 +1,617 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DeriveGeneric #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE DuplicateRecordFields #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE GeneralizedNewtypeDeriving #-}</span><span>
+</span><span id="line-4"></span><span class="hs-pragma">{-# LANGUAGE ImportQualifiedPost #-}</span><span>
+</span><span id="line-5"></span><span class="hs-pragma">{-# LANGUAGE OverloadedRecordDot #-}</span><span>
+</span><span id="line-6"></span><span class="hs-pragma">{-# LANGUAGE NoFieldSelectors #-}</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Module      : Crypto.Secp256k1.Internal.Recovery</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- License     : UNLICENSE</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Maintainer  : Jean-Pierre Rupp &lt;jprupp@protonmail.ch&gt;</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- Portability : POSIX</span><span>
+</span><span id="line-14"></span><span class="hs-comment">--</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- Crytpographic functions related to recoverable signatures from Bitcoin&#8217;s secp256k1 library.</span><span>
+</span><span id="line-16"></span><span class="hs-comment">--</span><span>
+</span><span id="line-17"></span><span class="hs-comment">-- The API for this module may change at any time. This is an internal module only</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- exposed for hacking and experimentation.</span><span>
+</span><span id="line-19"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Crypto.Secp256k1.Internal.Recovery</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.DeepSeq</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">NFData</span></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">unless</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-operator">(&lt;=&lt;)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Crypto.Secp256k1.Internal.Base</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Msg</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">PubKey</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">SecKey</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">Sig</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Crypto.Secp256k1.Internal.Context</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Ctx</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Crypto.Secp256k1.Internal.ForeignTypes</span></span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">isSuccess</span></span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.RecoveryOps.html"><span class="hs-identifier">Crypto.Secp256k1.Internal.RecoveryOps</span></a></span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.RecoveryOps.html#ecdsaRecover"><span class="hs-identifier">ecdsaRecover</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.RecoveryOps.html#ecdsaRecoverableSignatureConvert"><span class="hs-identifier">ecdsaRecoverableSignatureConvert</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.RecoveryOps.html#ecdsaRecoverableSignatureParseCompact"><span class="hs-identifier">ecdsaRecoverableSignatureParseCompact</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.RecoveryOps.html#ecdsaRecoverableSignatureSerializeCompact"><span class="hs-identifier">ecdsaRecoverableSignatureSerializeCompact</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Crypto.Secp256k1.Internal.RecoveryOps.html#ecdsaSignRecoverable"><span class="hs-identifier">ecdsaSignRecoverable</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Crypto.Secp256k1.Internal.Util</span></span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">decodeHex</span></span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><span class="hs-identifier">showsHex</span></span><span class="hs-special">,</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><span class="hs-identifier">unsafePackByteString</span></span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>    </span><span class="annot"><span class="hs-identifier">unsafeUseByteString</span></span><span class="hs-special">,</span><span>
+</span><span id="line-40"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.ByteString</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">ByteString</span></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.ByteString</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">BS</span></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">fromMaybe</span></span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.String</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">IsString</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Word</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Word8</span></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Foreign</span></span><span>
+</span><span id="line-47"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">alloca</span></span><span class="hs-special">,</span><span>
+</span><span id="line-48"></span><span>    </span><span class="annot"><span class="hs-identifier">free</span></span><span class="hs-special">,</span><span>
+</span><span id="line-49"></span><span>    </span><span class="annot"><span class="hs-identifier">mallocBytes</span></span><span class="hs-special">,</span><span>
+</span><span id="line-50"></span><span>    </span><span class="annot"><span class="hs-identifier">nullFunPtr</span></span><span class="hs-special">,</span><span>
+</span><span id="line-51"></span><span>    </span><span class="annot"><span class="hs-identifier">nullPtr</span></span><span class="hs-special">,</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><span class="hs-identifier">peek</span></span><span class="hs-special">,</span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Generics</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Generic</span></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.IO.Unsafe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">unsafePerformIO</span></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Text.Read</span></span><span>
+</span><span id="line-57"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">Lexeme</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">String</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><span class="hs-identifier">lexP</span></span><span class="hs-special">,</span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><span class="hs-identifier">parens</span></span><span class="hs-special">,</span><span>
+</span><span id="line-60"></span><span>    </span><span class="annot"><span class="hs-identifier">pfail</span></span><span class="hs-special">,</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><span class="hs-identifier">readPrec</span></span><span class="hs-special">,</span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-keyword">newtype</span><span> </span><span id="RecSig"><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#RecSig"><span class="hs-identifier hs-var">RecSig</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="RecSig"><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#RecSig"><span class="hs-identifier hs-var">RecSig</span></a></span></span><span> </span><span class="hs-special">{</span><span id="%24sel%3Aget%3ARecSig"><span class="annot"><span class="annottext">RecSig -&gt; ByteString
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#%24sel%3Aget%3ARecSig"><span class="hs-identifier hs-var hs-var">get</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ByteString</span></span><span class="hs-special">}</span><span>
+</span><span id="line-65"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679059763"><span id="local-6989586621679059768"><span class="annot"><span class="annottext">RecSig -&gt; RecSig -&gt; Bool
+(RecSig -&gt; RecSig -&gt; Bool)
+-&gt; (RecSig -&gt; RecSig -&gt; Bool) -&gt; Eq RecSig
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: RecSig -&gt; RecSig -&gt; Bool
+== :: RecSig -&gt; RecSig -&gt; Bool
+$c/= :: RecSig -&gt; RecSig -&gt; Bool
+/= :: RecSig -&gt; RecSig -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679059774"><span id="local-6989586621679059776"><span class="annot"><span class="annottext">(forall x. RecSig -&gt; Rep RecSig x)
+-&gt; (forall x. Rep RecSig x -&gt; RecSig) -&gt; Generic RecSig
+forall x. Rep RecSig x -&gt; RecSig
+forall x. RecSig -&gt; Rep RecSig x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. RecSig -&gt; Rep RecSig x
+from :: forall x. RecSig -&gt; Rep RecSig x
+$cto :: forall x. Rep RecSig x -&gt; RecSig
+to :: forall x. Rep RecSig x -&gt; RecSig
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679059780"><span class="annot"><span class="annottext">RecSig -&gt; ()
+(RecSig -&gt; ()) -&gt; NFData RecSig
+forall a. (a -&gt; ()) -&gt; NFData a
+$crnf :: RecSig -&gt; ()
+rnf :: RecSig -&gt; ()
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">NFData</span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-66"></span><span>
+</span><span id="line-67"></span><span class="hs-keyword">data</span><span> </span><span id="CompactRecSig"><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-var">CompactRecSig</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="CompactRecSig"><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-var">CompactRecSig</span></a></span></span><span>
+</span><span id="line-68"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="%24sel%3Ars%3ACompactRecSig"><span class="annot"><span class="annottext">CompactRecSig -&gt; ByteString
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#%24sel%3Ars%3ACompactRecSig"><span class="hs-identifier hs-var hs-var">rs</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">ByteString</span></span><span class="hs-special">,</span><span>
+</span><span id="line-69"></span><span>    </span><span id="%24sel%3Av%3ACompactRecSig"><span class="annot"><span class="annottext">CompactRecSig -&gt; Word8
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#%24sel%3Av%3ACompactRecSig"><span class="hs-identifier hs-var hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-pragma">{-# UNPACK</span><span> </span><span class="hs-pragma">#-}</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Word8</span></span><span>
+</span><span id="line-70"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-71"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679059790"><span id="local-6989586621679059795"><span class="annot"><span class="annottext">CompactRecSig -&gt; CompactRecSig -&gt; Bool
+(CompactRecSig -&gt; CompactRecSig -&gt; Bool)
+-&gt; (CompactRecSig -&gt; CompactRecSig -&gt; Bool) -&gt; Eq CompactRecSig
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: CompactRecSig -&gt; CompactRecSig -&gt; Bool
+== :: CompactRecSig -&gt; CompactRecSig -&gt; Bool
+$c/= :: CompactRecSig -&gt; CompactRecSig -&gt; Bool
+/= :: CompactRecSig -&gt; CompactRecSig -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679059799"><span id="local-6989586621679059801"><span class="annot"><span class="annottext">(forall x. CompactRecSig -&gt; Rep CompactRecSig x)
+-&gt; (forall x. Rep CompactRecSig x -&gt; CompactRecSig)
+-&gt; Generic CompactRecSig
+forall x. Rep CompactRecSig x -&gt; CompactRecSig
+forall x. CompactRecSig -&gt; Rep CompactRecSig x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. CompactRecSig -&gt; Rep CompactRecSig x
+from :: forall x. CompactRecSig -&gt; Rep CompactRecSig x
+$cto :: forall x. Rep CompactRecSig x -&gt; CompactRecSig
+to :: forall x. Rep CompactRecSig x -&gt; CompactRecSig
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span>
+</span><span id="line-73"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679059804"><span class="annot"><span class="hs-identifier hs-type">NFData</span></span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-type">CompactRecSig</span></a></span></span><span>
+</span><span id="line-74"></span><span>
+</span><span id="line-75"></span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#compactRecSig"><span class="hs-identifier hs-type">compactRecSig</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ByteString</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-type">CompactRecSig</span></a></span><span>
+</span><span id="line-76"></span><span id="compactRecSig"><span class="annot"><span class="annottext">compactRecSig :: ByteString -&gt; Maybe CompactRecSig
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#compactRecSig"><span class="hs-identifier hs-var hs-var">compactRecSig</span></a></span></span><span> </span><span id="local-6989586621679059823"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059823"><span class="hs-identifier hs-var">bs</span></a></span></span><span>
+</span><span id="line-77"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Int
+</span><span class="hs-identifier hs-var">BS.length</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059823"><span class="hs-identifier hs-var">bs</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">65</span></span><span class="hs-special">,</span><span>
+</span><span id="line-78"></span><span>    </span><span class="annot"><span class="annottext">HasCallStack =&gt; ByteString -&gt; Word8
+ByteString -&gt; Word8
+</span><span class="hs-identifier hs-var">BS.last</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059823"><span class="hs-identifier hs-var">bs</span></a></span><span> </span><span class="annot"><span class="annottext">Word8 -&gt; Word8 -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Word8
+</span><span class="hs-number">3</span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-79"></span><span>      </span><span class="annot"><span class="annottext">CompactRecSig -&gt; Maybe CompactRecSig
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ByteString -&gt; Word8 -&gt; CompactRecSig
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-var">CompactRecSig</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; ByteString -&gt; ByteString
+</span><span class="hs-identifier hs-var">BS.take</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">64</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059823"><span class="hs-identifier hs-var">bs</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">HasCallStack =&gt; ByteString -&gt; Word8
+ByteString -&gt; Word8
+</span><span class="hs-identifier hs-var">BS.last</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059823"><span class="hs-identifier hs-var">bs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-80"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe CompactRecSig
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#serializeCompactRecSig"><span class="hs-identifier hs-type">serializeCompactRecSig</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-type">CompactRecSig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ByteString</span></span><span>
+</span><span id="line-83"></span><span id="serializeCompactRecSig"><span class="annot"><span class="annottext">serializeCompactRecSig :: CompactRecSig -&gt; ByteString
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#serializeCompactRecSig"><span class="hs-identifier hs-var hs-var">serializeCompactRecSig</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-type">CompactRecSig</span></a></span><span> </span><span id="local-6989586621679059829"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059829"><span class="hs-identifier hs-var">bs</span></a></span></span><span> </span><span id="local-6989586621679059830"><span class="annot"><span class="annottext">Word8
+</span><a href="#local-6989586621679059830"><span class="hs-identifier hs-var">v</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-84"></span><span>  </span><span class="annot"><span class="annottext">ByteString -&gt; Word8 -&gt; ByteString
+</span><span class="hs-identifier hs-var">BS.snoc</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059829"><span class="hs-identifier hs-var">bs</span></a></span><span> </span><span class="annot"><span class="annottext">Word8
+</span><a href="#local-6989586621679059830"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#compactRecSigFromString"><span class="hs-identifier hs-type">compactRecSigFromString</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-type">CompactRecSig</span></a></span><span>
+</span><span id="line-87"></span><span id="compactRecSigFromString"><span class="annot"><span class="annottext">compactRecSigFromString :: String -&gt; Maybe CompactRecSig
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#compactRecSigFromString"><span class="hs-identifier hs-var hs-var">compactRecSigFromString</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Maybe CompactRecSig
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#compactRecSig"><span class="hs-identifier hs-var">compactRecSig</span></a></span><span> </span><span class="annot"><span class="annottext">(ByteString -&gt; Maybe CompactRecSig)
+-&gt; (String -&gt; Maybe ByteString) -&gt; String -&gt; Maybe CompactRecSig
+forall (m :: * -&gt; *) b c a.
+Monad m =&gt;
+(b -&gt; m c) -&gt; (a -&gt; m b) -&gt; a -&gt; m c
+</span><span class="hs-operator hs-var">&lt;=&lt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Maybe ByteString
+forall a. ConvertibleStrings a ByteString =&gt; a -&gt; Maybe ByteString
+</span><span class="hs-identifier hs-var">decodeHex</span></span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679059834"><span id="local-6989586621679059838"><span id="local-6989586621679059842"><span class="annot"><span class="hs-identifier hs-type">Read</span></span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-type">CompactRecSig</span></a></span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-90"></span><span>  </span><span id="local-6989586621679059850"><span class="annot"><span class="annottext">readPrec :: ReadPrec CompactRecSig
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">readPrec</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ReadPrec CompactRecSig -&gt; ReadPrec CompactRecSig
+forall a. ReadPrec a -&gt; ReadPrec a
+</span><span class="hs-identifier hs-var">parens</span></span><span> </span><span class="annot"><span class="annottext">(ReadPrec CompactRecSig -&gt; ReadPrec CompactRecSig)
+-&gt; ReadPrec CompactRecSig -&gt; ReadPrec CompactRecSig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-91"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span id="local-6989586621679059851"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679059851"><span class="hs-identifier hs-var">str</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ReadPrec Lexeme
+</span><span class="hs-identifier hs-var">lexP</span></span><span>
+</span><span id="line-92"></span><span>    </span><span class="annot"><span class="annottext">ReadPrec CompactRecSig
+-&gt; (CompactRecSig -&gt; ReadPrec CompactRecSig)
+-&gt; Maybe CompactRecSig
+-&gt; ReadPrec CompactRecSig
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">ReadPrec CompactRecSig
+forall a. ReadPrec a
+</span><span class="hs-identifier hs-var">pfail</span></span><span> </span><span class="annot"><span class="annottext">CompactRecSig -&gt; ReadPrec CompactRecSig
+forall a. a -&gt; ReadPrec a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Maybe CompactRecSig -&gt; ReadPrec CompactRecSig)
+-&gt; Maybe CompactRecSig -&gt; ReadPrec CompactRecSig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Maybe CompactRecSig
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#compactRecSigFromString"><span class="hs-identifier hs-var">compactRecSigFromString</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679059851"><span class="hs-identifier hs-var">str</span></a></span><span>
+</span><span id="line-93"></span><span>
+</span><span id="line-94"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsString</span></span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-type">CompactRecSig</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-95"></span><span>  </span><span id="local-6989586621679059856"><span class="annot"><span class="annottext">fromString :: String -&gt; CompactRecSig
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">fromString</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">CompactRecSig -&gt; Maybe CompactRecSig -&gt; CompactRecSig
+forall a. a -&gt; Maybe a -&gt; a
+</span><span class="hs-identifier hs-var">fromMaybe</span></span><span> </span><span class="annot"><span class="annottext">CompactRecSig
+forall {a}. a
+</span><a href="#local-6989586621679059857"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">(Maybe CompactRecSig -&gt; CompactRecSig)
+-&gt; (String -&gt; Maybe CompactRecSig) -&gt; String -&gt; CompactRecSig
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Maybe CompactRecSig
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#compactRecSigFromString"><span class="hs-identifier hs-var">compactRecSigFromString</span></a></span><span>
+</span><span id="line-96"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-97"></span><span>      </span><span id="local-6989586621679059857"><span class="annot"><span class="annottext">e :: a
+</span><a href="#local-6989586621679059857"><span class="hs-identifier hs-var hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; a
+forall a. HasCallStack =&gt; String -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Could not decode signature from hex string&quot;</span></span><span>
+</span><span id="line-98"></span><span>
+</span><span id="line-99"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679059864"><span id="local-6989586621679059868"><span class="annot"><span class="hs-identifier hs-type">Show</span></span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-type">CompactRecSig</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-100"></span><span>  </span><span id="local-6989586621679059871"><span class="annot"><span class="annottext">showsPrec :: Int -&gt; CompactRecSig -&gt; ShowS
+</span><a href="#local-6989586621679059871"><span class="hs-identifier hs-var hs-var hs-var hs-var">showsPrec</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; ShowS
+</span><span class="hs-identifier hs-var">showsHex</span></span><span> </span><span class="annot"><span class="annottext">(ByteString -&gt; ShowS)
+-&gt; (CompactRecSig -&gt; ByteString) -&gt; CompactRecSig -&gt; ShowS
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">CompactRecSig -&gt; ByteString
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#serializeCompactRecSig"><span class="hs-identifier hs-var">serializeCompactRecSig</span></a></span><span>
+</span><span id="line-101"></span><span>
+</span><span id="line-102"></span><span class="annot"><span class="hs-comment">-- | Parse a compact ECDSA signature (64 bytes + recovery id).</span></span><span>
+</span><span id="line-103"></span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#importCompactRecSig"><span class="hs-identifier hs-type">importCompactRecSig</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ctx</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-type">CompactRecSig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#RecSig"><span class="hs-identifier hs-type">RecSig</span></a></span><span>
+</span><span id="line-104"></span><span id="importCompactRecSig"><span class="annot"><span class="annottext">importCompactRecSig :: Ctx -&gt; CompactRecSig -&gt; Maybe RecSig
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#importCompactRecSig"><span class="hs-identifier hs-var hs-var">importCompactRecSig</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ctx</span></span><span> </span><span id="local-6989586621679059875"><span class="annot"><span class="annottext">Ptr LCtx
+</span><a href="#local-6989586621679059875"><span class="hs-identifier hs-var">ctx</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-type">CompactRecSig</span></a></span><span> </span><span id="local-6989586621679059876"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059876"><span class="hs-identifier hs-var">sig_rs</span></a></span></span><span> </span><span id="local-6989586621679059877"><span class="annot"><span class="annottext">Word8
+</span><a href="#local-6989586621679059877"><span class="hs-identifier hs-var">sig_v</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-105"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Int
+</span><span class="hs-identifier hs-var">BS.length</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059876"><span class="hs-identifier hs-var">sig_rs</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">64</span></span><span class="hs-special">,</span><span>
+</span><span id="line-106"></span><span>    </span><span class="annot"><span class="annottext">Word8
+</span><a href="#local-6989586621679059877"><span class="hs-identifier hs-var">sig_v</span></a></span><span> </span><span class="annot"><span class="annottext">Word8 -&gt; Word8 -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Word8
+</span><span class="hs-number">3</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO (Maybe RecSig) -&gt; Maybe RecSig
+forall a. IO a -&gt; a
+</span><span class="hs-identifier hs-var">unsafePerformIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (Maybe RecSig) -&gt; Maybe RecSig)
+-&gt; IO (Maybe RecSig) -&gt; Maybe RecSig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-107"></span><span>      </span><span class="annot"><span class="annottext">ByteString
+-&gt; ((Ptr Compact64, CSize) -&gt; IO (Maybe RecSig))
+-&gt; IO (Maybe RecSig)
+forall a b. ByteString -&gt; ((Ptr a, CSize) -&gt; IO b) -&gt; IO b
+</span><span class="hs-identifier hs-var">unsafeUseByteString</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059876"><span class="hs-identifier hs-var">sig_rs</span></a></span><span> </span><span class="annot"><span class="annottext">(((Ptr Compact64, CSize) -&gt; IO (Maybe RecSig))
+ -&gt; IO (Maybe RecSig))
+-&gt; ((Ptr Compact64, CSize) -&gt; IO (Maybe RecSig))
+-&gt; IO (Maybe RecSig)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679059878"><span class="annot"><span class="annottext">Ptr Compact64
+</span><a href="#local-6989586621679059878"><span class="hs-identifier hs-var">sig_rs_ptr</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CSize
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-108"></span><span>        </span><span id="local-6989586621679059879"><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059879"><span class="hs-identifier hs-var">out_rec_sig_ptr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IO (Ptr RecSig65)
+forall a. Int -&gt; IO (Ptr a)
+</span><span class="hs-identifier hs-var">mallocBytes</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">65</span></span><span>
+</span><span id="line-109"></span><span>        </span><span id="local-6989586621679059880"><span class="annot"><span class="annottext">CInt
+</span><a href="#local-6989586621679059880"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-110"></span><span>          </span><span class="annot"><span class="annottext">Ptr LCtx -&gt; Ptr RecSig65 -&gt; Ptr Compact64 -&gt; CInt -&gt; IO CInt
+</span><a href="Crypto.Secp256k1.Internal.RecoveryOps.html#ecdsaRecoverableSignatureParseCompact"><span class="hs-identifier hs-var">ecdsaRecoverableSignatureParseCompact</span></a></span><span>
+</span><span id="line-111"></span><span>            </span><span class="annot"><span class="annottext">Ptr LCtx
+</span><a href="#local-6989586621679059875"><span class="hs-identifier hs-var">ctx</span></a></span><span>
+</span><span id="line-112"></span><span>            </span><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059879"><span class="hs-identifier hs-var">out_rec_sig_ptr</span></a></span><span>
+</span><span id="line-113"></span><span>            </span><span class="annot"><span class="annottext">Ptr Compact64
+</span><a href="#local-6989586621679059878"><span class="hs-identifier hs-var">sig_rs_ptr</span></a></span><span>
+</span><span id="line-114"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Word8 -&gt; CInt
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">fromIntegral</span></span><span> </span><span class="annot"><span class="annottext">Word8
+</span><a href="#local-6989586621679059877"><span class="hs-identifier hs-var">sig_v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-115"></span><span>        </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">CInt -&gt; Bool
+</span><span class="hs-identifier hs-var">isSuccess</span></span><span> </span><span class="annot"><span class="annottext">CInt
+</span><a href="#local-6989586621679059880"><span class="hs-identifier hs-var">ret</span></a></span><span>
+</span><span id="line-116"></span><span>          </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-117"></span><span>            </span><span id="local-6989586621679059881"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059881"><span class="hs-identifier hs-var">out_bs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Ptr RecSig65, CSize) -&gt; IO ByteString
+forall a. (Ptr a, CSize) -&gt; IO ByteString
+</span><span class="hs-identifier hs-var">unsafePackByteString</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059879"><span class="hs-identifier hs-var">out_rec_sig_ptr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CSize
+</span><span class="hs-number">65</span></span><span class="hs-special">)</span><span>
+</span><span id="line-118"></span><span>            </span><span class="annot"><span class="annottext">Maybe RecSig -&gt; IO (Maybe RecSig)
+forall a. a -&gt; IO a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RecSig -&gt; Maybe RecSig
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ByteString -&gt; RecSig
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#RecSig"><span class="hs-identifier hs-var">RecSig</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059881"><span class="hs-identifier hs-var">out_bs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-119"></span><span>          </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-120"></span><span>            </span><span class="annot"><span class="annottext">Ptr RecSig65 -&gt; IO ()
+forall a. Ptr a -&gt; IO ()
+</span><span class="hs-identifier hs-var">free</span></span><span> </span><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059879"><span class="hs-identifier hs-var">out_rec_sig_ptr</span></a></span><span>
+</span><span id="line-121"></span><span>            </span><span class="annot"><span class="annottext">Maybe RecSig -&gt; IO (Maybe RecSig)
+forall a. a -&gt; IO a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Maybe RecSig
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-122"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe RecSig
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-123"></span><span>
+</span><span id="line-124"></span><span class="annot"><span class="hs-comment">-- | Serialize an ECDSA signature in compact format (64 bytes + recovery id).</span></span><span>
+</span><span id="line-125"></span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#exportCompactRecSig"><span class="hs-identifier hs-type">exportCompactRecSig</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ctx</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#RecSig"><span class="hs-identifier hs-type">RecSig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-type">CompactRecSig</span></a></span><span>
+</span><span id="line-126"></span><span id="exportCompactRecSig"><span class="annot"><span class="annottext">exportCompactRecSig :: Ctx -&gt; RecSig -&gt; CompactRecSig
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#exportCompactRecSig"><span class="hs-identifier hs-var hs-var">exportCompactRecSig</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ctx</span></span><span> </span><span id="local-6989586621679059883"><span class="annot"><span class="annottext">Ptr LCtx
+</span><a href="#local-6989586621679059883"><span class="hs-identifier hs-var">ctx</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#RecSig"><span class="hs-identifier hs-type">RecSig</span></a></span><span> </span><span id="local-6989586621679059884"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059884"><span class="hs-identifier hs-var">rec_sig_bs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO CompactRecSig -&gt; CompactRecSig
+forall a. IO a -&gt; a
+</span><span class="hs-identifier hs-var">unsafePerformIO</span></span><span> </span><span class="annot"><span class="annottext">(IO CompactRecSig -&gt; CompactRecSig)
+-&gt; IO CompactRecSig -&gt; CompactRecSig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-127"></span><span>  </span><span class="annot"><span class="annottext">ByteString
+-&gt; ((Ptr RecSig65, CSize) -&gt; IO CompactRecSig) -&gt; IO CompactRecSig
+forall a b. ByteString -&gt; ((Ptr a, CSize) -&gt; IO b) -&gt; IO b
+</span><span class="hs-identifier hs-var">unsafeUseByteString</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059884"><span class="hs-identifier hs-var">rec_sig_bs</span></a></span><span> </span><span class="annot"><span class="annottext">(((Ptr RecSig65, CSize) -&gt; IO CompactRecSig) -&gt; IO CompactRecSig)
+-&gt; ((Ptr RecSig65, CSize) -&gt; IO CompactRecSig) -&gt; IO CompactRecSig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679059885"><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059885"><span class="hs-identifier hs-var">rec_sig_ptr</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CSize
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-128"></span><span>    </span><span class="annot"><span class="annottext">(Ptr CInt -&gt; IO CompactRecSig) -&gt; IO CompactRecSig
+forall a b. Storable a =&gt; (Ptr a -&gt; IO b) -&gt; IO b
+</span><span class="hs-identifier hs-var">alloca</span></span><span> </span><span class="annot"><span class="annottext">((Ptr CInt -&gt; IO CompactRecSig) -&gt; IO CompactRecSig)
+-&gt; (Ptr CInt -&gt; IO CompactRecSig) -&gt; IO CompactRecSig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679059886"><span class="annot"><span class="annottext">Ptr CInt
+</span><a href="#local-6989586621679059886"><span class="hs-identifier hs-var">out_v_ptr</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-129"></span><span>      </span><span id="local-6989586621679059887"><span class="annot"><span class="annottext">Ptr Compact64
+</span><a href="#local-6989586621679059887"><span class="hs-identifier hs-var">out_sig_ptr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IO (Ptr Compact64)
+forall a. Int -&gt; IO (Ptr a)
+</span><span class="hs-identifier hs-var">mallocBytes</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">64</span></span><span>
+</span><span id="line-130"></span><span>      </span><span id="local-6989586621679059888"><span class="annot"><span class="annottext">CInt
+</span><a href="#local-6989586621679059888"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-131"></span><span>        </span><span class="annot"><span class="annottext">Ptr LCtx -&gt; Ptr Compact64 -&gt; Ptr CInt -&gt; Ptr RecSig65 -&gt; IO CInt
+</span><a href="Crypto.Secp256k1.Internal.RecoveryOps.html#ecdsaRecoverableSignatureSerializeCompact"><span class="hs-identifier hs-var">ecdsaRecoverableSignatureSerializeCompact</span></a></span><span>
+</span><span id="line-132"></span><span>          </span><span class="annot"><span class="annottext">Ptr LCtx
+</span><a href="#local-6989586621679059883"><span class="hs-identifier hs-var">ctx</span></a></span><span>
+</span><span id="line-133"></span><span>          </span><span class="annot"><span class="annottext">Ptr Compact64
+</span><a href="#local-6989586621679059887"><span class="hs-identifier hs-var">out_sig_ptr</span></a></span><span>
+</span><span id="line-134"></span><span>          </span><span class="annot"><span class="annottext">Ptr CInt
+</span><a href="#local-6989586621679059886"><span class="hs-identifier hs-var">out_v_ptr</span></a></span><span>
+</span><span id="line-135"></span><span>          </span><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059885"><span class="hs-identifier hs-var">rec_sig_ptr</span></a></span><span>
+</span><span id="line-136"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
+</span><span class="hs-identifier hs-var">unless</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CInt -&gt; Bool
+</span><span class="hs-identifier hs-var">isSuccess</span></span><span> </span><span class="annot"><span class="annottext">CInt
+</span><a href="#local-6989586621679059888"><span class="hs-identifier hs-var">ret</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; IO ()) -&gt; IO () -&gt; IO ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-137"></span><span>        </span><span class="annot"><span class="annottext">Ptr Compact64 -&gt; IO ()
+forall a. Ptr a -&gt; IO ()
+</span><span class="hs-identifier hs-var">free</span></span><span> </span><span class="annot"><span class="annottext">Ptr Compact64
+</span><a href="#local-6989586621679059887"><span class="hs-identifier hs-var">out_sig_ptr</span></a></span><span>
+</span><span id="line-138"></span><span>        </span><span class="annot"><span class="annottext">String -&gt; IO ()
+forall a. HasCallStack =&gt; String -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Could not obtain compact signature&quot;</span></span><span>
+</span><span id="line-139"></span><span>      </span><span id="local-6989586621679059889"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059889"><span class="hs-identifier hs-var">out_bs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Ptr Compact64, CSize) -&gt; IO ByteString
+forall a. (Ptr a, CSize) -&gt; IO ByteString
+</span><span class="hs-identifier hs-var">unsafePackByteString</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Ptr Compact64
+</span><a href="#local-6989586621679059887"><span class="hs-identifier hs-var">out_sig_ptr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CSize
+</span><span class="hs-number">64</span></span><span class="hs-special">)</span><span>
+</span><span id="line-140"></span><span>      </span><span id="local-6989586621679059890"><span class="annot"><span class="annottext">CInt
+</span><a href="#local-6989586621679059890"><span class="hs-identifier hs-var">out_v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Ptr CInt -&gt; IO CInt
+forall a. Storable a =&gt; Ptr a -&gt; IO a
+</span><span class="hs-identifier hs-var">peek</span></span><span> </span><span class="annot"><span class="annottext">Ptr CInt
+</span><a href="#local-6989586621679059886"><span class="hs-identifier hs-var">out_v_ptr</span></a></span><span>
+</span><span id="line-141"></span><span>      </span><span class="annot"><span class="annottext">CompactRecSig -&gt; IO CompactRecSig
+forall a. a -&gt; IO a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(CompactRecSig -&gt; IO CompactRecSig)
+-&gt; CompactRecSig -&gt; IO CompactRecSig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Word8 -&gt; CompactRecSig
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#CompactRecSig"><span class="hs-identifier hs-var">CompactRecSig</span></a></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059889"><span class="hs-identifier hs-var">out_bs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CInt -&gt; Word8
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">fromIntegral</span></span><span> </span><span class="annot"><span class="annottext">CInt
+</span><a href="#local-6989586621679059890"><span class="hs-identifier hs-var">out_v</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-142"></span><span>
+</span><span id="line-143"></span><span class="annot"><span class="hs-comment">-- | Convert a recoverable signature into a normal signature.</span></span><span>
+</span><span id="line-144"></span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#convertRecSig"><span class="hs-identifier hs-type">convertRecSig</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ctx</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#RecSig"><span class="hs-identifier hs-type">RecSig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Sig</span></span><span>
+</span><span id="line-145"></span><span id="convertRecSig"><span class="annot"><span class="annottext">convertRecSig :: Ctx -&gt; RecSig -&gt; Sig
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#convertRecSig"><span class="hs-identifier hs-var hs-var">convertRecSig</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ctx</span></span><span> </span><span id="local-6989586621679059892"><span class="annot"><span class="annottext">Ptr LCtx
+</span><a href="#local-6989586621679059892"><span class="hs-identifier hs-var">ctx</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#RecSig"><span class="hs-identifier hs-type">RecSig</span></a></span><span> </span><span id="local-6989586621679059893"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059893"><span class="hs-identifier hs-var">rec_sig_bs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO Sig -&gt; Sig
+forall a. IO a -&gt; a
+</span><span class="hs-identifier hs-var">unsafePerformIO</span></span><span> </span><span class="annot"><span class="annottext">(IO Sig -&gt; Sig) -&gt; IO Sig -&gt; Sig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-146"></span><span>  </span><span class="annot"><span class="annottext">ByteString -&gt; ((Ptr RecSig65, CSize) -&gt; IO Sig) -&gt; IO Sig
+forall a b. ByteString -&gt; ((Ptr a, CSize) -&gt; IO b) -&gt; IO b
+</span><span class="hs-identifier hs-var">unsafeUseByteString</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059893"><span class="hs-identifier hs-var">rec_sig_bs</span></a></span><span> </span><span class="annot"><span class="annottext">(((Ptr RecSig65, CSize) -&gt; IO Sig) -&gt; IO Sig)
+-&gt; ((Ptr RecSig65, CSize) -&gt; IO Sig) -&gt; IO Sig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679059894"><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059894"><span class="hs-identifier hs-var">rec_sig_ptr</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CSize
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-147"></span><span>    </span><span id="local-6989586621679059895"><span class="annot"><span class="annottext">Ptr Sig64
+</span><a href="#local-6989586621679059895"><span class="hs-identifier hs-var">out_ptr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IO (Ptr Sig64)
+forall a. Int -&gt; IO (Ptr a)
+</span><span class="hs-identifier hs-var">mallocBytes</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">64</span></span><span>
+</span><span id="line-148"></span><span>    </span><span id="local-6989586621679059896"><span class="annot"><span class="annottext">CInt
+</span><a href="#local-6989586621679059896"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Ptr LCtx -&gt; Ptr Sig64 -&gt; Ptr RecSig65 -&gt; IO CInt
+</span><a href="Crypto.Secp256k1.Internal.RecoveryOps.html#ecdsaRecoverableSignatureConvert"><span class="hs-identifier hs-var">ecdsaRecoverableSignatureConvert</span></a></span><span> </span><span class="annot"><span class="annottext">Ptr LCtx
+</span><a href="#local-6989586621679059892"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">Ptr Sig64
+</span><a href="#local-6989586621679059895"><span class="hs-identifier hs-var">out_ptr</span></a></span><span> </span><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059894"><span class="hs-identifier hs-var">rec_sig_ptr</span></a></span><span>
+</span><span id="line-149"></span><span>    </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
+</span><span class="hs-identifier hs-var">unless</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CInt -&gt; Bool
+</span><span class="hs-identifier hs-var">isSuccess</span></span><span> </span><span class="annot"><span class="annottext">CInt
+</span><a href="#local-6989586621679059896"><span class="hs-identifier hs-var">ret</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; IO ()) -&gt; IO () -&gt; IO ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-150"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; IO ()
+forall a. HasCallStack =&gt; String -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Could not convert a recoverable signature&quot;</span></span><span>
+</span><span id="line-151"></span><span>    </span><span id="local-6989586621679059897"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059897"><span class="hs-identifier hs-var">out_bs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Ptr Sig64, CSize) -&gt; IO ByteString
+forall a. (Ptr a, CSize) -&gt; IO ByteString
+</span><span class="hs-identifier hs-var">unsafePackByteString</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Ptr Sig64
+</span><a href="#local-6989586621679059895"><span class="hs-identifier hs-var">out_ptr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CSize
+</span><span class="hs-number">64</span></span><span class="hs-special">)</span><span>
+</span><span id="line-152"></span><span>    </span><span class="annot"><span class="annottext">Sig -&gt; IO Sig
+forall a. a -&gt; IO a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Sig -&gt; IO Sig) -&gt; Sig -&gt; IO Sig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">ByteString -&gt; Sig
+</span><span class="hs-identifier hs-var">Sig</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059897"><span class="hs-identifier hs-var">out_bs</span></a></span><span>
+</span><span id="line-153"></span><span>
+</span><span id="line-154"></span><span class="annot"><span class="hs-comment">-- | Create a recoverable ECDSA signature.</span></span><span>
+</span><span id="line-155"></span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#signRecMsg"><span class="hs-identifier hs-type">signRecMsg</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ctx</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">SecKey</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Msg</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#RecSig"><span class="hs-identifier hs-type">RecSig</span></a></span><span>
+</span><span id="line-156"></span><span id="signRecMsg"><span class="annot"><span class="annottext">signRecMsg :: Ctx -&gt; SecKey -&gt; Msg -&gt; RecSig
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#signRecMsg"><span class="hs-identifier hs-var hs-var">signRecMsg</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ctx</span></span><span> </span><span id="local-6989586621679059900"><span class="annot"><span class="annottext">Ptr LCtx
+</span><a href="#local-6989586621679059900"><span class="hs-identifier hs-var">ctx</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">SecKey</span></span><span> </span><span id="local-6989586621679059902"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059902"><span class="hs-identifier hs-var">sec_key</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Msg</span></span><span> </span><span id="local-6989586621679059904"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059904"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO RecSig -&gt; RecSig
+forall a. IO a -&gt; a
+</span><span class="hs-identifier hs-var">unsafePerformIO</span></span><span> </span><span class="annot"><span class="annottext">(IO RecSig -&gt; RecSig) -&gt; IO RecSig -&gt; RecSig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-157"></span><span>  </span><span class="annot"><span class="annottext">ByteString -&gt; ((Ptr SecKey32, CSize) -&gt; IO RecSig) -&gt; IO RecSig
+forall a b. ByteString -&gt; ((Ptr a, CSize) -&gt; IO b) -&gt; IO b
+</span><span class="hs-identifier hs-var">unsafeUseByteString</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059902"><span class="hs-identifier hs-var">sec_key</span></a></span><span> </span><span class="annot"><span class="annottext">(((Ptr SecKey32, CSize) -&gt; IO RecSig) -&gt; IO RecSig)
+-&gt; ((Ptr SecKey32, CSize) -&gt; IO RecSig) -&gt; IO RecSig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679059905"><span class="annot"><span class="annottext">Ptr SecKey32
+</span><a href="#local-6989586621679059905"><span class="hs-identifier hs-var">sec_key_ptr</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CSize
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-158"></span><span>    </span><span class="annot"><span class="annottext">ByteString -&gt; ((Ptr Msg32, CSize) -&gt; IO RecSig) -&gt; IO RecSig
+forall a b. ByteString -&gt; ((Ptr a, CSize) -&gt; IO b) -&gt; IO b
+</span><span class="hs-identifier hs-var">unsafeUseByteString</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059904"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">(((Ptr Msg32, CSize) -&gt; IO RecSig) -&gt; IO RecSig)
+-&gt; ((Ptr Msg32, CSize) -&gt; IO RecSig) -&gt; IO RecSig
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679059906"><span class="annot"><span class="annottext">Ptr Msg32
+</span><a href="#local-6989586621679059906"><span class="hs-identifier hs-var">msg_ptr</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CSize
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-159"></span><span>      </span><span id="local-6989586621679059907"><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059907"><span class="hs-identifier hs-var">rec_sig_ptr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IO (Ptr RecSig65)
+forall a. Int -&gt; IO (Ptr a)
+</span><span class="hs-identifier hs-var">mallocBytes</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">65</span></span><span>
+</span><span id="line-160"></span><span>      </span><span id="local-6989586621679059908"><span class="annot"><span class="annottext">CInt
+</span><a href="#local-6989586621679059908"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Ptr LCtx
+-&gt; Ptr RecSig65
+-&gt; Ptr Msg32
+-&gt; Ptr SecKey32
+-&gt; FunPtr (NonceFun Any)
+-&gt; Ptr Any
+-&gt; IO CInt
+forall a.
+Ptr LCtx
+-&gt; Ptr RecSig65
+-&gt; Ptr Msg32
+-&gt; Ptr SecKey32
+-&gt; FunPtr (NonceFun a)
+-&gt; Ptr a
+-&gt; IO CInt
+</span><a href="Crypto.Secp256k1.Internal.RecoveryOps.html#ecdsaSignRecoverable"><span class="hs-identifier hs-var">ecdsaSignRecoverable</span></a></span><span> </span><span class="annot"><span class="annottext">Ptr LCtx
+</span><a href="#local-6989586621679059900"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059907"><span class="hs-identifier hs-var">rec_sig_ptr</span></a></span><span> </span><span class="annot"><span class="annottext">Ptr Msg32
+</span><a href="#local-6989586621679059906"><span class="hs-identifier hs-var">msg_ptr</span></a></span><span> </span><span class="annot"><span class="annottext">Ptr SecKey32
+</span><a href="#local-6989586621679059905"><span class="hs-identifier hs-var">sec_key_ptr</span></a></span><span> </span><span class="annot"><span class="annottext">FunPtr (NonceFun Any)
+forall a. FunPtr a
+</span><span class="hs-identifier hs-var">nullFunPtr</span></span><span> </span><span class="annot"><span class="annottext">Ptr Any
+forall a. Ptr a
+</span><span class="hs-identifier hs-var">nullPtr</span></span><span>
+</span><span id="line-161"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
+</span><span class="hs-identifier hs-var">unless</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CInt -&gt; Bool
+</span><span class="hs-identifier hs-var">isSuccess</span></span><span> </span><span class="annot"><span class="annottext">CInt
+</span><a href="#local-6989586621679059908"><span class="hs-identifier hs-var">ret</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; IO ()) -&gt; IO () -&gt; IO ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-162"></span><span>        </span><span class="annot"><span class="annottext">Ptr RecSig65 -&gt; IO ()
+forall a. Ptr a -&gt; IO ()
+</span><span class="hs-identifier hs-var">free</span></span><span> </span><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059907"><span class="hs-identifier hs-var">rec_sig_ptr</span></a></span><span>
+</span><span id="line-163"></span><span>        </span><span class="annot"><span class="annottext">String -&gt; IO ()
+forall a. HasCallStack =&gt; String -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;could not sign message&quot;</span></span><span>
+</span><span id="line-164"></span><span>      </span><span class="annot"><span class="annottext">ByteString -&gt; RecSig
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#RecSig"><span class="hs-identifier hs-var">RecSig</span></a></span><span> </span><span class="annot"><span class="annottext">(ByteString -&gt; RecSig) -&gt; IO ByteString -&gt; IO RecSig
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Ptr RecSig65, CSize) -&gt; IO ByteString
+forall a. (Ptr a, CSize) -&gt; IO ByteString
+</span><span class="hs-identifier hs-var">unsafePackByteString</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059907"><span class="hs-identifier hs-var">rec_sig_ptr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CSize
+</span><span class="hs-number">65</span></span><span class="hs-special">)</span><span>
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span class="annot"><span class="hs-comment">-- | Recover an ECDSA public key from a signature.</span></span><span>
+</span><span id="line-167"></span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#recover"><span class="hs-identifier hs-type">recover</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ctx</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#RecSig"><span class="hs-identifier hs-type">RecSig</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Msg</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">PubKey</span></span><span>
+</span><span id="line-168"></span><span id="recover"><span class="annot"><span class="annottext">recover :: Ctx -&gt; RecSig -&gt; Msg -&gt; Maybe PubKey
+</span><a href="Crypto.Secp256k1.Internal.Recovery.html#recover"><span class="hs-identifier hs-var hs-var">recover</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Ctx</span></span><span> </span><span id="local-6989586621679059911"><span class="annot"><span class="annottext">Ptr LCtx
+</span><a href="#local-6989586621679059911"><span class="hs-identifier hs-var">ctx</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Crypto.Secp256k1.Internal.Recovery.html#RecSig"><span class="hs-identifier hs-type">RecSig</span></a></span><span> </span><span id="local-6989586621679059912"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059912"><span class="hs-identifier hs-var">rec_sig</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Msg</span></span><span> </span><span id="local-6989586621679059913"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059913"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IO (Maybe PubKey) -&gt; Maybe PubKey
+forall a. IO a -&gt; a
+</span><span class="hs-identifier hs-var">unsafePerformIO</span></span><span> </span><span class="annot"><span class="annottext">(IO (Maybe PubKey) -&gt; Maybe PubKey)
+-&gt; IO (Maybe PubKey) -&gt; Maybe PubKey
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span>
+</span><span id="line-169"></span><span>  </span><span class="annot"><span class="annottext">ByteString
+-&gt; ((Ptr RecSig65, CSize) -&gt; IO (Maybe PubKey))
+-&gt; IO (Maybe PubKey)
+forall a b. ByteString -&gt; ((Ptr a, CSize) -&gt; IO b) -&gt; IO b
+</span><span class="hs-identifier hs-var">unsafeUseByteString</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059912"><span class="hs-identifier hs-var">rec_sig</span></a></span><span> </span><span class="annot"><span class="annottext">(((Ptr RecSig65, CSize) -&gt; IO (Maybe PubKey)) -&gt; IO (Maybe PubKey))
+-&gt; ((Ptr RecSig65, CSize) -&gt; IO (Maybe PubKey))
+-&gt; IO (Maybe PubKey)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679059914"><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059914"><span class="hs-identifier hs-var">rec_sig_ptr</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CSize
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-170"></span><span>    </span><span class="annot"><span class="annottext">ByteString
+-&gt; ((Ptr Msg32, CSize) -&gt; IO (Maybe PubKey)) -&gt; IO (Maybe PubKey)
+forall a b. ByteString -&gt; ((Ptr a, CSize) -&gt; IO b) -&gt; IO b
+</span><span class="hs-identifier hs-var">unsafeUseByteString</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059913"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">(((Ptr Msg32, CSize) -&gt; IO (Maybe PubKey)) -&gt; IO (Maybe PubKey))
+-&gt; ((Ptr Msg32, CSize) -&gt; IO (Maybe PubKey)) -&gt; IO (Maybe PubKey)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679059915"><span class="annot"><span class="annottext">Ptr Msg32
+</span><a href="#local-6989586621679059915"><span class="hs-identifier hs-var">msg_ptr</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CSize
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-171"></span><span>      </span><span id="local-6989586621679059916"><span class="annot"><span class="annottext">Ptr PubKey64
+</span><a href="#local-6989586621679059916"><span class="hs-identifier hs-var">pub_key_ptr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; IO (Ptr PubKey64)
+forall a. Int -&gt; IO (Ptr a)
+</span><span class="hs-identifier hs-var">mallocBytes</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">64</span></span><span>
+</span><span id="line-172"></span><span>      </span><span id="local-6989586621679059917"><span class="annot"><span class="annottext">CInt
+</span><a href="#local-6989586621679059917"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Ptr LCtx -&gt; Ptr PubKey64 -&gt; Ptr RecSig65 -&gt; Ptr Msg32 -&gt; IO CInt
+</span><a href="Crypto.Secp256k1.Internal.RecoveryOps.html#ecdsaRecover"><span class="hs-identifier hs-var">ecdsaRecover</span></a></span><span> </span><span class="annot"><span class="annottext">Ptr LCtx
+</span><a href="#local-6989586621679059911"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">Ptr PubKey64
+</span><a href="#local-6989586621679059916"><span class="hs-identifier hs-var">pub_key_ptr</span></a></span><span> </span><span class="annot"><span class="annottext">Ptr RecSig65
+</span><a href="#local-6989586621679059914"><span class="hs-identifier hs-var">rec_sig_ptr</span></a></span><span> </span><span class="annot"><span class="annottext">Ptr Msg32
+</span><a href="#local-6989586621679059915"><span class="hs-identifier hs-var">msg_ptr</span></a></span><span>
+</span><span id="line-173"></span><span>      </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">CInt -&gt; Bool
+</span><span class="hs-identifier hs-var">isSuccess</span></span><span> </span><span class="annot"><span class="annottext">CInt
+</span><a href="#local-6989586621679059917"><span class="hs-identifier hs-var">ret</span></a></span><span>
+</span><span id="line-174"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-175"></span><span>          </span><span id="local-6989586621679059918"><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059918"><span class="hs-identifier hs-var">pub_key_bs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Ptr PubKey64, CSize) -&gt; IO ByteString
+forall a. (Ptr a, CSize) -&gt; IO ByteString
+</span><span class="hs-identifier hs-var">unsafePackByteString</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Ptr PubKey64
+</span><a href="#local-6989586621679059916"><span class="hs-identifier hs-var">pub_key_ptr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CSize
+</span><span class="hs-number">64</span></span><span class="hs-special">)</span><span>
+</span><span id="line-176"></span><span>          </span><span class="annot"><span class="annottext">Maybe PubKey -&gt; IO (Maybe PubKey)
+forall a. a -&gt; IO a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PubKey -&gt; Maybe PubKey
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ByteString -&gt; PubKey
+</span><span class="hs-identifier hs-var">PubKey</span></span><span> </span><span class="annot"><span class="annottext">ByteString
+</span><a href="#local-6989586621679059918"><span class="hs-identifier hs-var">pub_key_bs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-177"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-178"></span><span>          </span><span class="annot"><span class="annottext">Ptr PubKey64 -&gt; IO ()
+forall a. Ptr a -&gt; IO ()
+</span><span class="hs-identifier hs-var">free</span></span><span> </span><span class="annot"><span class="annottext">Ptr PubKey64
+</span><a href="#local-6989586621679059916"><span class="hs-identifier hs-var">pub_key_ptr</span></a></span><span>
+</span><span id="line-179"></span><span>          </span><span class="annot"><span class="annottext">Maybe PubKey -&gt; IO (Maybe PubKey)
+forall a. a -&gt; IO a
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Maybe PubKey
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-180"></span></pre></body></html>

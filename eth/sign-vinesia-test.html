@@ -1,0 +1,102 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <script>
+            async function doSign(button) {
+                const outputTA = document.getElementById("output")
+                button.disabled = true
+                try {
+                    const eth = window.ethereum
+                    if (!eth) {
+                        throw "No ethereum wallet available"
+                    }
+                    const addressList = await eth.request({
+                        method: 'eth_requestAccounts',
+                        params: [],
+                    })
+                    const address = addressList[0]
+                    const chainId = await eth.request({
+                        method: 'eth_chainId',
+                        params: [],
+                    })
+                    if (!address) {
+                        throw "No address"
+                    }
+                    const messageJson = testMessage(chainId)
+                    const signature = await eth.request({
+                        method: 'eth_signTypedData_v4',
+                        params: [address, JSON.stringify(messageJson)],
+                    })
+                    outputTA.innerText = signature
+                } catch (ex) {
+                    if (ex.message) {
+                        window.alert(ex.message)
+                    } else {
+                        window.alert(ex)
+                    }
+                }
+                button.disabled = false
+            }
+            
+            function testMessage(chainId) {
+                const now = new Date()
+                const now_str =
+                    now.getFullYear().toString().padStart(4, '0') + '-' +
+                    (now.getMonth() + 1).toString().padStart(2, '0') + '-' +
+                    now.getDate().toString().padStart(2, '0') + ' ' +
+                    now.getHours().toString().padStart(2, '0') + ':' +
+                    now.getMinutes().toString().padStart(2, '0') + ':' +
+                    now.getSeconds().toString().padStart(2, '0')
+                const tzoffset = now.getTimezoneOffset()
+                if (tzoffset >= 0) {
+                    now_str += '+'
+                } else {
+                    now_str += '-'
+                    tzoffset = -tzoffset
+                }
+                now_str +=
+                    ((tzoffset / 60) | 1).toString().padStart(2, '0') + ':'
+                    (tzoffset % 60).toString().padStart(2, '0')
+                return {
+                    "types": {
+                        "EIP712Domain": [
+                            {"type": "string", "name": "name"},
+                            {"type": "string", "name": "version"},
+                            {"type": "uint256", "name": "chainId"}
+                        ],
+                        "Attachment": [
+                            {"type": "address", "name": "wallet"},
+                            {"type": "bytes32", "name": "nonce"},
+                            {"type": "string", "name": "datetime"},
+                            {"type": "string", "name": "vinesia_user_id"},
+                            {"type": "string", "name": "user_full_name"},
+                            {"type": "bool", "name": "is_payment_method"},
+                            {"type": "bool", "name": "is_login_method"},
+                            {"type": "bool", "name": "is_new_primary"}
+                        ]
+                    },
+                    "primaryType": "Attachment",
+                    "domain": {
+                        "name": "Vinesia",
+                        "version": "1",
+                        "chainId": 1
+                    },
+                    "message": {
+                        "wallet": "0x21e6f5649f9B9859a2e9c7F6b84921eb1FB35429",
+                        "nonce": "0x06bdb0cd7e8de442686744c2f1a76bc5b60360f2dbccce9ca76f240f3ce13a59",
+                        "datetime": now_str,
+                        "vinesia_user_id": "user123456789",
+                        "user_full_name": "John Doe",
+                        "is_payment_method": true,
+                        "is_login_method": false,
+                        "is_new_primary": false
+                    }
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <input type="button" value="push me" onclick="doSign(this)" /><br />
+        <textarea id="output" style="width:30em;height:20em"></textarea>
+    </body>
+</html>
